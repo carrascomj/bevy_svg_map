@@ -1,0 +1,12 @@
+[package]
+name = "bevy_svg_map"
+version = "0.1.0"
+authors = ["carrascomj <carrascomurielj@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+svgtypes="0.5.0"
+roxmltree="0.13.0"
+bevy="0.2.1"
