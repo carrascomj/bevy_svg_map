@@ -1,8 +1,6 @@
 use bevy_svg_map::load_svg_map;
 
-use bevy::app::App;
 use bevy::prelude::*;
-use bevy::AddDefaultPlugins;
 
 struct TestPlugin;
 impl Plugin for TestPlugin {

@@ -21,19 +21,14 @@ The library provides a function to be used inside a bevy's startup_system.
 ```rust
 use bevy_svg_map::load_svg_map;
 
-use bevy::app::App;
 use bevy::prelude::*;
-use bevy::AddDefaultPlugins;
-
-struct TestPlugin;
-impl Plugin for TestPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(setup.system());
-    }
-}
 
 fn main() {
-    App::build().add_default_plugins().add_plugin(TestPlugin).run();
+    App::build().add_default_plugins().add_startup_system(setup.system()).run();
+    App::build()
+          .add_default_plugins()
+          .add_startup_system(setup.system())
+          .run();
 }
 
 fn setup(commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
