@@ -2,18 +2,24 @@
 
 on:
   push:
-    # Ignore bors branches, since they are covered by `clippy_bors.yml`
-    branches-ignore:
-      - auto
-      - try
-    # Don't run Clippy tests, when only textfiles were modified
+    # Branches that sound like default
+    branches: 
+      - master
+      - main
+      - trunk
+      - dev
+    # Don't run tests, when only textfiles were modified
     paths-ignore:
       - "COPYRIGHT"
       - "LICENSE-*"
       - "**.md"
       - "**.txt"
   pull_request:
-    # Don't run Clippy tests, when only textfiles were modified
+    branches: 
+      - master
+      - main
+      - trunk
+      - dev
     paths-ignore:
       - "COPYRIGHT"
       - "LICENSE-*"
