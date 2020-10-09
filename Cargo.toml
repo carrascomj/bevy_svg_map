@@ -9,4 +9,8 @@ edition = "2018"
 [dependencies]
 svgtypes="0.5.0"
 roxmltree="0.13.0"
-bevy="0.2.1"
+
+[dependencies.bevy]
+version="0.2.1"
+default_features=false
+features = ["render"]
