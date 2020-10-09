@@ -6,6 +6,8 @@
 Load paths from an SVG directly into [bevy](https://github.com/bevyengine/bevy/).
 ![alt text](./assets/showcase.png "Dalted logo black")
 
+It will be completely useless until I implement the strategy system for the style. So, please don't use.
+
 ## Getting started
 Add the library to your project's `Cargo.toml` (check last published version):
 ```toml
@@ -44,7 +46,7 @@ Set up your Document Properties (in Inkscape _Ctrl+Shift+D_) to pixels so that y
 
 ## Features
 * [x] Load Horizontal and Vertical lines.
-* [ ] Load other types of [svgtypes](https://github.com/RazrFalcon/svgtypes) `PathSegment`s.
+* [ ] Load other types of [svgtypes](https://github.com/RazrFalcon/svgtypes) [`PathSegment`s]().
 * [ ] Provide a [strategy](https://en.wikipedia.org/wiki/Strategy_pattern) trait
 to use the style to add Components and materials.
 * [ ] Handling of units.

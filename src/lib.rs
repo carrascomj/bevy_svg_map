@@ -3,6 +3,8 @@ use roxmltree;
 use std::{error::Error, fs};
 use svgtypes::{PathParser, PathSegment};
 
+/// Struct that parses the svg paths with their style
+/// TODO: Style struct with possible fields (fill, stroke-width, etc.)
 #[derive(Debug)]
 struct StyleSegment {
     style: String,
@@ -17,6 +19,8 @@ impl From<(&str, &str)> for StyleSegment {
     }
 }
 
+/// Return a zero-cost read-only view of the svg XML document as a graph
+/// TODO: look into "d" attribute, it was infered from a quick lock at a sample of n=1 files...
 fn take_lines_with_style<'a>(doc: &'a roxmltree::Document) -> Vec<(&'a str, &'a str)> {
     doc.descendants()
         .filter(|n| match n.attribute("d") {
@@ -27,6 +31,7 @@ fn take_lines_with_style<'a>(doc: &'a roxmltree::Document) -> Vec<(&'a str, &'a 
         .collect()
 }
 
+/// Parse each "d" node into a StyleSegment
 fn tokenize_svg(path: &str) -> Result<Vec<StyleSegment>, Box<dyn Error>> {
     let xmlfile = fs::read_to_string(path)?;
     let doc = roxmltree::Document::parse(&xmlfile)?;
@@ -36,6 +41,9 @@ fn tokenize_svg(path: &str) -> Result<Vec<StyleSegment>, Box<dyn Error>> {
         .collect())
 }
 
+/// Take the Commands and add Components given the paths in a SVG file
+/// TODO: strategy design: expose a trait with a method that returns materials given style,
+/// and a method that adds Components given the style.
 pub fn load_svg_map(
     mut commands: Commands,
     svg_map: &str,
