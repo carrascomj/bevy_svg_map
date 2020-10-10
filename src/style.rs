@@ -133,7 +133,12 @@ impl Default for SvgStyle {
 
 pub trait StyleStrategy {
     fn color_decider(&self, _style: &SvgStyle) -> Color {
-        Color{r: 0f32, g: 0f32, b:0f32, a:1f32}
+        Color {
+            r: 0f32,
+            g: 0f32,
+            b: 0f32,
+            a: 1f32,
+        }
     }
     fn component_decider(&self, _style: &SvgStyle, _sprite: &mut bevy::prelude::Commands) {
         ()

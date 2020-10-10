@@ -4,7 +4,7 @@ use std::{error::Error, fs};
 use svgtypes::{PathParser, PathSegment};
 
 mod style;
-pub use style::{SvgStyle, StyleStrategy};
+pub use style::{StyleStrategy, SvgStyle};
 
 /// Struct that parses the svg paths with their style
 #[derive(Debug)]
@@ -49,7 +49,7 @@ pub fn load_svg_map<T: StyleStrategy>(
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     svg_map: &str,
-    strategy: T
+    strategy: T,
 ) {
     let wall_thickness = 10.0;
     let (x_max, y_max) = tokenize_svg(svg_map)
@@ -67,7 +67,7 @@ pub fn load_svg_map<T: StyleStrategy>(
         });
     let (x_max, y_max) = ((x_max / 2.) as f32, (y_max / 2.) as f32);
 
-    for StyleSegment{style, traces} in tokenize_svg(svg_map).unwrap().iter() {
+    for StyleSegment { style, traces } in tokenize_svg(svg_map).unwrap().iter() {
         let mut origin = Vec3::new(0f32, 0f32, 0f32);
         let wall_material = materials.add(strategy.color_decider(style).into());
         for tok in traces.iter() {
@@ -79,31 +79,37 @@ pub fn load_svg_map<T: StyleStrategy>(
                 }
                 PathSegment::HorizontalLineTo { abs: _, x } => {
                     let x = (*x as f32).abs();
-                    strategy.component_decider(style, commands.spawn(SpriteComponents {
-                        material: wall_material,
-                        transform: Transform::from_translation(Vec3::new(
-                            (origin.x() + x) / 2.0 - x_max,
-                            origin.y() - y_max,
-                            0.0,
-                        )),
-                        sprite: Sprite::new(Vec2::new((origin.x() - x).abs(), wall_thickness)),
-                        ..Default::default()
-                    }));
+                    strategy.component_decider(
+                        style,
+                        commands.spawn(SpriteComponents {
+                            material: wall_material,
+                            transform: Transform::from_translation(Vec3::new(
+                                (origin.x() + x) / 2.0 - x_max,
+                                origin.y() - y_max,
+                                0.0,
+                            )),
+                            sprite: Sprite::new(Vec2::new((origin.x() - x).abs(), wall_thickness)),
+                            ..Default::default()
+                        }),
+                    );
                     // .with(Collider::Solid);
                     origin = Vec3::new(x, origin.y(), 0f32);
                 }
                 PathSegment::VerticalLineTo { abs: _, y } => {
                     let y = (*y as f32).abs();
-                    strategy.component_decider(style, commands.spawn(SpriteComponents {
-                        material: wall_material,
-                        transform: Transform::from_translation(Vec3::new(
-                            origin.x() - x_max,
-                            (origin.y() + y) / 2.0 - y_max,
-                            0.0,
-                        )),
-                        sprite: Sprite::new(Vec2::new(wall_thickness, (origin.y() - y).abs())),
-                        ..Default::default()
-                    }));
+                    strategy.component_decider(
+                        style,
+                        commands.spawn(SpriteComponents {
+                            material: wall_material,
+                            transform: Transform::from_translation(Vec3::new(
+                                origin.x() - x_max,
+                                (origin.y() + y) / 2.0 - y_max,
+                                0.0,
+                            )),
+                            sprite: Sprite::new(Vec2::new(wall_thickness, (origin.y() - y).abs())),
+                            ..Default::default()
+                        }),
+                    );
                     // .with(Collider::Solid);
                     origin = Vec3::new(origin.x(), y, 0f32);
                 }

@@ -17,17 +17,20 @@ impl StyleStrategy for CustomStrategy {
     fn color_decider(&self, style: &SvgStyle) -> Color {
         match style.stroke() {
             Some(c) => c,
-            _ => Color {r: 1f32, g: 0f32, b: 0f32, a: 0f32}
+            _ => Color {
+                r: 1f32,
+                g: 0f32,
+                b: 0f32,
+                a: 0f32,
+            },
         }
     }
     fn component_decider(&self, style: &SvgStyle, comp: &mut Commands) {
-        comp.with(
-            if style.stroke_opacity().unwrap() == 1.0 {
-                Collider::Solid
-            } else{
-                Collider::Scorable
-            }
-        );
+        comp.with(if style.stroke_opacity().unwrap() == 1.0 {
+            Collider::Solid
+        } else {
+            Collider::Scorable
+        });
     }
 }
 
@@ -53,5 +56,7 @@ fn can_it_be_added() {
 
 #[test]
 fn custom_style_strategy() {
-    App::build().add_default_plugins().add_startup_system(setup_custom.system());
+    App::build()
+        .add_default_plugins()
+        .add_startup_system(setup_custom.system());
 }
