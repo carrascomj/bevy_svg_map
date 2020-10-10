@@ -17,12 +17,7 @@ impl StyleStrategy for CustomStrategy {
     fn color_decider(&self, style: &SvgStyle) -> Color {
         match style.stroke() {
             Some(c) => c,
-            _ => Color {
-                r: 1f32,
-                g: 0f32,
-                b: 0f32,
-                a: 0f32,
-            },
+            _ => Color::RED,
         }
     }
     fn component_decider(&self, style: &SvgStyle, comp: &mut Commands) {

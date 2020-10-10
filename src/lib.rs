@@ -96,6 +96,7 @@ pub fn load_svg_map<T: StyleStrategy>(
                     origin = Vec3::new(x, origin.y(), 0f32);
                 }
                 PathSegment::VerticalLineTo { abs: _, y } => {
+                    println!("{:?}", tok.is_relative());
                     let y = (*y as f32).abs();
                     strategy.component_decider(
                         style,

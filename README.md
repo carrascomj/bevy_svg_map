@@ -59,7 +59,7 @@ impl StyleStrategy for MyStrategy {
         match style.stroke() {
             Some(c) => c,
             // add red lines if the Color could not be parsed from the SVG
-            _ => Color {r: 1f32, g: 0f32, b: 0f32, a: 0f32}
+            _ => Color::RED,
         }
     }
 }
