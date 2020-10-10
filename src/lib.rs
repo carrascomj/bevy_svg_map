@@ -4,7 +4,7 @@ use std::{error::Error, fs};
 use svgtypes::{PathParser, PathSegment};
 
 mod style;
-pub use style::SvgStyle;
+pub use style::{SvgStyle, StyleStrategy};
 
 /// Struct that parses the svg paths with their style
 #[derive(Debug)]
@@ -45,12 +45,12 @@ fn tokenize_svg(path: &str) -> Result<Vec<StyleSegment>, Box<dyn Error>> {
 /// Take the Commands and add Components given the paths in a SVG file
 /// TODO: strategy design: expose a trait with a method that returns materials given style,
 /// and a method that adds Components given the style.
-pub fn load_svg_map(
+pub fn load_svg_map<T: StyleStrategy>(
     mut commands: Commands,
-    svg_map: &str,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    svg_map: &str,
+    strategy: T
 ) {
-    let wall_material = materials.add(Color::rgb(0.5, 0.5, 0.5).into());
     let wall_thickness = 10.0;
     let (x_max, y_max) = tokenize_svg(svg_map)
         .unwrap()
@@ -67,10 +67,10 @@ pub fn load_svg_map(
         });
     let (x_max, y_max) = ((x_max / 2.) as f32, (y_max / 2.) as f32);
 
-    for path in tokenize_svg(svg_map).unwrap().iter() {
+    for StyleSegment{style, traces} in tokenize_svg(svg_map).unwrap().iter() {
         let mut origin = Vec3::new(0f32, 0f32, 0f32);
-        println!("{:?}", path.style);
-        for tok in path.traces.iter() {
+        let wall_material = materials.add(strategy.color_decider(style).into());
+        for tok in traces.iter() {
             match tok {
                 PathSegment::MoveTo { abs: _, x, y } => {
                     origin = Vec3::new((*x as f32).abs(), (*y as f32).abs(), 0f32);
@@ -79,7 +79,7 @@ pub fn load_svg_map(
                 }
                 PathSegment::HorizontalLineTo { abs: _, x } => {
                     let x = (*x as f32).abs();
-                    commands.spawn(SpriteComponents {
+                    strategy.component_decider(style, commands.spawn(SpriteComponents {
                         material: wall_material,
                         transform: Transform::from_translation(Vec3::new(
                             (origin.x() + x) / 2.0 - x_max,
@@ -88,13 +88,13 @@ pub fn load_svg_map(
                         )),
                         sprite: Sprite::new(Vec2::new((origin.x() - x).abs(), wall_thickness)),
                         ..Default::default()
-                    });
+                    }));
                     // .with(Collider::Solid);
                     origin = Vec3::new(x, origin.y(), 0f32);
                 }
                 PathSegment::VerticalLineTo { abs: _, y } => {
                     let y = (*y as f32).abs();
-                    commands.spawn(SpriteComponents {
+                    strategy.component_decider(style, commands.spawn(SpriteComponents {
                         material: wall_material,
                         transform: Transform::from_translation(Vec3::new(
                             origin.x() - x_max,
@@ -103,7 +103,7 @@ pub fn load_svg_map(
                         )),
                         sprite: Sprite::new(Vec2::new(wall_thickness, (origin.y() - y).abs())),
                         ..Default::default()
-                    });
+                    }));
                     // .with(Collider::Solid);
                     origin = Vec3::new(origin.x(), y, 0f32);
                 }
