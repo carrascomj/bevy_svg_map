@@ -3,24 +3,25 @@ use roxmltree;
 use std::{error::Error, fs};
 use svgtypes::{PathParser, PathSegment};
 
+mod style;
+pub use style::SvgStyle;
+
 /// Struct that parses the svg paths with their style
-/// TODO: Style struct with possible fields (fill, stroke-width, etc.)
 #[derive(Debug)]
 struct StyleSegment {
-    style: String,
+    style: SvgStyle,
     traces: Vec<PathSegment>,
 }
 
 impl From<(&str, &str)> for StyleSegment {
     fn from(tup: (&str, &str)) -> Self {
-        let style: String = tup.0.into();
+        let style: SvgStyle = SvgStyle::from(tup.0);
         let traces = PathParser::from(tup.1).map(|n| n.unwrap()).collect();
         StyleSegment { style, traces }
     }
 }
 
 /// Return a zero-cost read-only view of the svg XML document as a graph
-/// TODO: look into "d" attribute, it was infered from a quick lock at a sample of n=1 files...
 fn take_lines_with_style<'a>(doc: &'a roxmltree::Document) -> Vec<(&'a str, &'a str)> {
     doc.descendants()
         .filter(|n| match n.attribute("d") {
@@ -31,13 +32,13 @@ fn take_lines_with_style<'a>(doc: &'a roxmltree::Document) -> Vec<(&'a str, &'a 
         .collect()
 }
 
-/// Parse each "d" node into a StyleSegment
+/// Parse each "d" node's attribute into a StyleSegment
 fn tokenize_svg(path: &str) -> Result<Vec<StyleSegment>, Box<dyn Error>> {
     let xmlfile = fs::read_to_string(path)?;
     let doc = roxmltree::Document::parse(&xmlfile)?;
     Ok(take_lines_with_style(&doc)
         .iter()
-        .map(|path| StyleSegment::from(*path))
+        .map(|p| StyleSegment::from(*p))
         .collect())
 }
 
