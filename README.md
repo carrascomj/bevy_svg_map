@@ -39,8 +39,8 @@ fn main() {
           .run();
 }
 
-fn setup(commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
-    load_svg_map(commands, materials, "assets/ex.svg", MyStrategy);
+fn setup(com: Commands, mat: ResMut<Assets<ColorMaterial>>, mesh: ResMut<Assets<Mesh>>) {
+    load_svg_map(com, mat, mesh, "assets/ex.svg", MyStrategy);
 }
 ```
 That should display some lines as in the image on the top. However, they are plain
