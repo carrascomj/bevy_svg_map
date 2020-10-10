@@ -36,12 +36,20 @@ impl Plugin for TestPlugin {
     }
 }
 
-fn setup(commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
-    load_svg_map(commands, materials, "assets/ex.svg", MyStrategy);
+fn setup(
+    commands: Commands,
+    materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+) {
+    load_svg_map(commands, materials, meshes, "assets/ex.svg", MyStrategy);
 }
 
-fn setup_custom(commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
-    load_svg_map(commands, materials, "assets/ex.svg", CustomStrategy);
+fn setup_custom(
+    commands: Commands,
+    materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+) {
+    load_svg_map(commands, materials, meshes, "assets/ex.svg", CustomStrategy);
 }
 
 #[test]

@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_prototype_lyon::prelude::*;
 use roxmltree;
 use std::{error::Error, fs};
 use svgtypes::{PathParser, PathSegment};
@@ -48,10 +49,11 @@ fn tokenize_svg(path: &str) -> Result<Vec<StyleSegment>, Box<dyn Error>> {
 pub fn load_svg_map<T: StyleStrategy>(
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
     svg_map: &str,
     strategy: T,
 ) {
-    let wall_thickness = 10.0;
+    // let wall_thickness = 10.0;
     let (x_max, y_max) = tokenize_svg(svg_map)
         .unwrap()
         .iter()
@@ -69,54 +71,51 @@ pub fn load_svg_map<T: StyleStrategy>(
 
     for StyleSegment { style, traces } in tokenize_svg(svg_map).unwrap().iter() {
         let mut origin = Vec3::new(0f32, 0f32, 0f32);
-        let wall_material = materials.add(strategy.color_decider(style).into());
+        let color_handle = materials.add(strategy.color_decider(style).into());
+        let mut builder = PathBuilder::new();
         for tok in traces.iter() {
             match tok {
                 PathSegment::MoveTo { abs: _, x, y } => {
-                    origin = Vec3::new((*x as f32).abs(), (*y as f32).abs(), 0f32);
-                    println!("{:?}", origin);
-                    continue;
+                    let (x, y) = ((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    origin = Vec3::new(x, y, 0f32);
+                    builder.move_to(point(x, y));
+                }
+                PathSegment::LineTo { abs: _, x, y } => {
+                    let (x, y) = ((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    origin = Vec3::new(x, y, 0f32);
+                    builder.line_to(point(x, y));
                 }
                 PathSegment::HorizontalLineTo { abs: _, x } => {
-                    let x = (*x as f32).abs();
-                    strategy.component_decider(
-                        style,
-                        commands.spawn(SpriteComponents {
-                            material: wall_material,
-                            transform: Transform::from_translation(Vec3::new(
-                                (origin.x() + x) / 2.0 - x_max,
-                                origin.y() - y_max,
-                                0.0,
-                            )),
-                            sprite: Sprite::new(Vec2::new((origin.x() - x).abs(), wall_thickness)),
-                            ..Default::default()
-                        }),
-                    );
+                    let x = (*x as f32).abs() - x_max;
+                    builder.line_to(point(x, origin.y()));
                     // .with(Collider::Solid);
                     origin = Vec3::new(x, origin.y(), 0f32);
                 }
                 PathSegment::VerticalLineTo { abs: _, y } => {
-                    println!("{:?}", tok.is_relative());
-                    let y = (*y as f32).abs();
-                    strategy.component_decider(
-                        style,
-                        commands.spawn(SpriteComponents {
-                            material: wall_material,
-                            transform: Transform::from_translation(Vec3::new(
-                                origin.x() - x_max,
-                                (origin.y() + y) / 2.0 - y_max,
-                                0.0,
-                            )),
-                            sprite: Sprite::new(Vec2::new(wall_thickness, (origin.y() - y).abs())),
-                            ..Default::default()
-                        }),
-                    );
+                    let y = (*y as f32).abs() - y_max;
+                    builder.line_to(point(origin.x(), y));
                     // .with(Collider::Solid);
                     origin = Vec3::new(origin.x(), y, 0f32);
                 }
                 _ => {}
             }
         }
+        builder.close();
+        let path = builder.build();
+        strategy.component_decider(
+            &style,
+            commands.spawn(
+                path.stroke(
+                    color_handle,
+                    &mut meshes,
+                    Vec3::new(0.0, 0.0, 0.0),
+                    &StrokeOptions::default()
+                        .with_line_width(5.0)
+                        .with_line_cap(LineCap::Round)
+                        .with_line_join(LineJoin::Round),
+                ),
+            ),
+        )
     }
 }
 
