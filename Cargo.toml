@@ -3,6 +3,11 @@ name = "bevy_svg_map"
 version = "0.1.0"
 authors = ["carrascomj <carrascomurielj@gmail.com>"]
 edition = "2018"
+description = "Tool to load SVG to bevy, adding properties based on the style"
+keywords = ["graphics", "gamedev", "bevy", "svg"]
+categories = ["Graphics", "Game Engines"]
+readme = "README.md"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
