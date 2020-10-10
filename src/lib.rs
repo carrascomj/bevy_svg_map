@@ -58,14 +58,16 @@ pub fn load_svg_map<T: StyleStrategy>(
         .unwrap()
         .iter()
         .flat_map(|n| n.traces.iter())
-        .fold((0f64, 0f64), |acc, n| match n {
-            PathSegment::MoveTo { abs: _, x, y } => (x.abs().max(acc.0), y.abs().max(acc.1)),
-            PathSegment::HorizontalLineTo { abs: _, x } => (x.abs().max(acc.0), acc.1),
-            PathSegment::VerticalLineTo { abs: _, y } => (acc.0, y.abs().max(acc.1)),
-            _ => {
-                println!("Found a not yet handled PathSegment");
-                acc
-            }
+        .fold((0f64, 0f64), |acc, n| {
+            let x_f = match n.x() {
+                Some(x) => x.abs().max(acc.0),
+                None => acc.0,
+            };
+            let y_f = match n.y() {
+                Some(y) => y.abs().max(acc.1),
+                None => acc.1,
+            };
+            (x_f, y_f)
         });
     let (x_max, y_max) = ((x_max / 2.) as f32, (y_max / 2.) as f32);
 
@@ -97,7 +99,7 @@ pub fn load_svg_map<T: StyleStrategy>(
                     // .with(Collider::Solid);
                     origin = Vec3::new(origin.x(), y, 0f32);
                 }
-                _ => {}
+                _ => println!("Found not implemented path"),
             }
         }
         builder.close();
