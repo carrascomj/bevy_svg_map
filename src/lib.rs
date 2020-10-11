@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use roxmltree;
+use bevy_prototype_lyon::prelude::*;
 use std::{error::Error, fs};
 use svgtypes::{PathParser, PathSegment};
 
@@ -24,10 +24,7 @@ impl From<(&str, &str)> for StyleSegment {
 /// Return a zero-cost read-only view of the svg XML document as a graph
 fn take_lines_with_style<'a>(doc: &'a roxmltree::Document) -> Vec<(&'a str, &'a str)> {
     doc.descendants()
-        .filter(|n| match n.attribute("d") {
-            Some(_) => true,
-            _ => false,
-        })
+        .filter(|n| matches!(n.attribute("d"), Some(_)))
         .map(|n| (n.attribute("style").unwrap(), n.attribute("d").unwrap()))
         .collect()
 }
@@ -48,74 +45,120 @@ fn tokenize_svg(path: &str) -> Result<Vec<StyleSegment>, Box<dyn Error>> {
 pub fn load_svg_map<T: StyleStrategy>(
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
     svg_map: &str,
     strategy: T,
 ) {
-    let wall_thickness = 10.0;
+    // let wall_thickness = 10.0;
     let (x_max, y_max) = tokenize_svg(svg_map)
         .unwrap()
         .iter()
         .flat_map(|n| n.traces.iter())
-        .fold((0f64, 0f64), |acc, n| match n {
-            PathSegment::MoveTo { abs: _, x, y } => (x.abs().max(acc.0), y.abs().max(acc.1)),
-            PathSegment::HorizontalLineTo { abs: _, x } => (x.abs().max(acc.0), acc.1),
-            PathSegment::VerticalLineTo { abs: _, y } => (acc.0, y.abs().max(acc.1)),
-            _ => {
-                println!("Found a not yet handled PathSegment");
-                acc
-            }
+        .fold((0f64, 0f64), |acc, n| {
+            let x_f = match n.x() {
+                Some(x) => x.abs().max(acc.0),
+                None => acc.0,
+            };
+            let y_f = match n.y() {
+                Some(y) => y.abs().max(acc.1),
+                None => acc.1,
+            };
+            (x_f, y_f)
         });
     let (x_max, y_max) = ((x_max / 2.) as f32, (y_max / 2.) as f32);
 
     for StyleSegment { style, traces } in tokenize_svg(svg_map).unwrap().iter() {
         let mut origin = Vec3::new(0f32, 0f32, 0f32);
-        let wall_material = materials.add(strategy.color_decider(style).into());
+        let color_handle = materials.add(strategy.color_decider(style).into());
+        let mut builder = PathBuilder::new();
         for tok in traces.iter() {
             match tok {
                 PathSegment::MoveTo { abs: _, x, y } => {
-                    origin = Vec3::new((*x as f32).abs(), (*y as f32).abs(), 0f32);
-                    println!("{:?}", origin);
-                    continue;
+                    let (x, y) = ((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    origin = Vec3::new(x, y, 0f32);
+                    builder.move_to(point(x, y));
+                }
+                PathSegment::LineTo { abs: _, x, y } => {
+                    let (x, y) = ((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    origin = Vec3::new(x, y, 0f32);
+                    builder.line_to(point(x, y));
                 }
                 PathSegment::HorizontalLineTo { abs: _, x } => {
-                    let x = (*x as f32).abs();
-                    strategy.component_decider(
-                        style,
-                        commands.spawn(SpriteComponents {
-                            material: wall_material,
-                            transform: Transform::from_translation(Vec3::new(
-                                (origin.x() + x) / 2.0 - x_max,
-                                origin.y() - y_max,
-                                0.0,
-                            )),
-                            sprite: Sprite::new(Vec2::new((origin.x() - x).abs(), wall_thickness)),
-                            ..Default::default()
-                        }),
-                    );
+                    let x = (*x as f32).abs() - x_max;
+                    builder.line_to(point(x, origin.y()));
                     // .with(Collider::Solid);
                     origin = Vec3::new(x, origin.y(), 0f32);
                 }
                 PathSegment::VerticalLineTo { abs: _, y } => {
-                    let y = (*y as f32).abs();
-                    strategy.component_decider(
-                        style,
-                        commands.spawn(SpriteComponents {
-                            material: wall_material,
-                            transform: Transform::from_translation(Vec3::new(
-                                origin.x() - x_max,
-                                (origin.y() + y) / 2.0 - y_max,
-                                0.0,
-                            )),
-                            sprite: Sprite::new(Vec2::new(wall_thickness, (origin.y() - y).abs())),
-                            ..Default::default()
-                        }),
-                    );
+                    let y = (*y as f32).abs() - y_max;
+                    builder.line_to(point(origin.x(), y));
                     // .with(Collider::Solid);
                     origin = Vec3::new(origin.x(), y, 0f32);
                 }
-                _ => {}
+                PathSegment::Quadratic {
+                    abs: _,
+                    x1,
+                    y1,
+                    x,
+                    y,
+                } => {
+                    let to = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    let control = point((*x1 as f32).abs() - x_max, (*y1 as f32).abs() - y_max);
+                    builder.quadratic_bezier_to(control, to);
+                }
+                PathSegment::CurveTo {
+                    abs: _,
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    x,
+                    y,
+                } => {
+                    let to = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    let control1 = point((*x1 as f32).abs() - x_max, (*y1 as f32).abs() - y_max);
+                    let control2 = point((*x2 as f32).abs() - x_max, (*y2 as f32).abs() - y_max);
+                    builder.cubic_bezier_to(control1, control2, to);
+                }
+                PathSegment::EllipticalArc {
+                    abs: _,
+                    rx,
+                    ry,
+                    x_axis_rotation,
+                    large_arc: _,
+                    sweep: _,
+                    x,
+                    y,
+                } => {
+                    let center = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    let (rx, ry) = ((*rx as f32).abs() - x_max, (*ry as f32).abs() - y_max);
+                    builder.arc(
+                        center,
+                        rx,
+                        ry,
+                        std::f32::consts::PI,
+                        *x_axis_rotation as f32,
+                    );
+                }
+                PathSegment::ClosePath { abs: _ } => builder.close(),
+                _ => println!("SVG mapper: Found not implemented path!"),
             }
         }
+        let path = builder.build();
+        strategy.component_decider(
+            &style,
+            commands.spawn(
+                path.stroke(
+                    color_handle,
+                    &mut meshes,
+                    Vec3::new(0.0, 0.0, 0.0),
+                    &StrokeOptions::default()
+                        .with_line_width(5.0)
+                        .with_line_cap(LineCap::Round)
+                        .with_line_join(LineJoin::Round),
+                ),
+            ),
+        )
     }
 }
 

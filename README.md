@@ -39,8 +39,8 @@ fn main() {
           .run();
 }
 
-fn setup(commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
-    load_svg_map(commands, materials, "assets/ex.svg", MyStrategy);
+fn setup(com: Commands, mat: ResMut<Assets<ColorMaterial>>, mesh: ResMut<Assets<Mesh>>) {
+    load_svg_map(com, mat, mesh, "assets/ex.svg", MyStrategy);
 }
 ```
 That should display some lines as in the image on the top. However, they are plain
@@ -59,7 +59,7 @@ impl StyleStrategy for MyStrategy {
         match style.stroke() {
             Some(c) => c,
             // add red lines if the Color could not be parsed from the SVG
-            _ => Color {r: 1f32, g: 0f32, b: 0f32, a: 0f32}
+            _ => Color::RED,
         }
     }
 }
@@ -105,7 +105,7 @@ Set up your Document Properties (in Inkscape _Ctrl+Shift+D_) to pixels so that y
 
 ## Features
 * [x] Load Horizontal and Vertical lines.
-* [ ] Load other types of [svgtypes](https://github.com/RazrFalcon/svgtypes) [`PathSegment`s]().
+* [x] Load other types of [svgtypes](https://github.com/RazrFalcon/svgtypes) [`PathSegment`s]().
 * [x] Provide a [strategy](https://en.wikipedia.org/wiki/Strategy_pattern) trait
 to use the style to add Components and materials.
 * [ ] Handling of units.

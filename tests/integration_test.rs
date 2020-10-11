@@ -17,12 +17,7 @@ impl StyleStrategy for CustomStrategy {
     fn color_decider(&self, style: &SvgStyle) -> Color {
         match style.stroke() {
             Some(c) => c,
-            _ => Color {
-                r: 1f32,
-                g: 0f32,
-                b: 0f32,
-                a: 0f32,
-            },
+            _ => Color::RED,
         }
     }
     fn component_decider(&self, style: &SvgStyle, comp: &mut Commands) {
@@ -41,22 +36,28 @@ impl Plugin for TestPlugin {
     }
 }
 
-fn setup(commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
-    load_svg_map(commands, materials, "assets/ex.svg", MyStrategy);
+fn setup(
+    commands: Commands,
+    materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+) {
+    load_svg_map(commands, materials, meshes, "assets/ex.svg", MyStrategy);
 }
 
-fn setup_custom(commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
-    load_svg_map(commands, materials, "assets/ex.svg", CustomStrategy);
+fn setup_custom(
+    commands: Commands,
+    materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+) {
+    load_svg_map(commands, materials, meshes, "assets/ex.svg", CustomStrategy);
 }
 
 #[test]
 fn can_it_be_added() {
-    App::build().add_default_plugins().add_plugin(TestPlugin);
+    App::build().add_plugin(TestPlugin);
 }
 
 #[test]
 fn custom_style_strategy() {
-    App::build()
-        .add_default_plugins()
-        .add_startup_system(setup_custom.system());
+    App::build().add_startup_system(setup_custom.system());
 }

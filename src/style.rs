@@ -9,12 +9,7 @@ pub struct SvgStyle(HashMap<String, String>);
 /// Helper function that transforms from str to svgtypes' Color to bevy's Color
 fn to_color(color: &str, opacity: f32) -> Option<Color> {
     if let Ok(Paint::Color(svgtypes::Color { red, green, blue })) = Paint::from_str(color) {
-        Some(Color {
-            r: red as f32,
-            g: green as f32,
-            b: blue as f32,
-            a: opacity,
-        })
+        Some(Color::rgba(red as f32, green as f32, blue as f32, opacity))
     } else {
         None
     }
@@ -37,12 +32,7 @@ fn to_color(color: &str, opacity: f32) -> Option<Color> {
 /// let style = SvgStyle::from("fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1");
 /// assert_eq!(
 ///     style.stroke().unwrap(),
-///     Color {
-///         r: 0f32,
-///         g: 0f32,
-///         b: 0f32,
-///         a: 1f32
-///     }
+///     Color::BLACK
 /// );
 /// ```
 impl SvgStyle {
@@ -115,9 +105,9 @@ impl From<&str> for SvgStyle {
     fn from(style: &str) -> Self {
         SvgStyle(
             style
-                .split(";")
+                .split(';')
                 .map(|n| {
-                    let a: Vec<&str> = n.split(":").take(2).collect();
+                    let a: Vec<&str> = n.split(':').take(2).collect();
                     (a[0].to_string(), a[1].to_string())
                 })
                 .collect::<HashMap<String, String>>(),
@@ -133,16 +123,9 @@ impl Default for SvgStyle {
 
 pub trait StyleStrategy {
     fn color_decider(&self, _style: &SvgStyle) -> Color {
-        Color {
-            r: 0f32,
-            g: 0f32,
-            b: 0f32,
-            a: 1f32,
-        }
+        Color::BLACK
     }
-    fn component_decider(&self, _style: &SvgStyle, _sprite: &mut bevy::prelude::Commands) {
-        ()
-    }
+    fn component_decider(&self, _style: &SvgStyle, _sprite: &mut bevy::prelude::Commands) {}
 }
 
 #[cfg(test)]
@@ -152,28 +135,12 @@ mod tests {
     #[test]
     fn style_parse_default() {
         let style = SvgStyle::default();
-        assert_eq!(
-            style.stroke().unwrap(),
-            Color {
-                r: 0f32,
-                g: 0f32,
-                b: 0f32,
-                a: 1f32
-            }
-        );
+        assert_eq!(style.stroke().unwrap(), Color::BLACK);
     }
 
     #[test]
     fn test_stroke_width() {
         let style = SvgStyle::default();
-        assert_eq!(
-            style.stroke().unwrap(),
-            Color {
-                r: 0f32,
-                g: 0f32,
-                b: 0f32,
-                a: 1f32
-            }
-        );
+        assert_eq!(style.stroke_width().unwrap(), 0.264583);
     }
 }
