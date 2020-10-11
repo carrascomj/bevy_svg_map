@@ -3,13 +3,12 @@
 [![Build Status](https://img.shields.io/crates/v/bevy_svg_map.svg)](https://crates.io/crates/bevy_svg_map/)
 [![](https://docs.rs/bevy_svg_map/badge.svg)](https://docs.rs/bevy_svg_map)
 
-Load paths from an SVG directly into [bevy](https://github.com/bevyengine/bevy/).
+Crate for loading SVG files into bevy:
+* Load paths from an SVG directly into [bevy](https://github.com/bevyengine/bevy/).
 The properties of the lines (color, opacity, fill...) can be used to programmatically
-add functionality, setting the foundation for a very weird workflow: Vector Graphics programmatically to Bevy!
+add functionality, setting the foundation for a very weird workflow: Vector Graphics as editor to bevy entities!
+* Load whole SVG files as a single entity (see [this example](#load-a-whole-svg-file-as-an-entity)).
 ![alt text](./assets/showcase.png "Two images showing the workflow form Inkscape to a bevy Runtime")
-
-Notice that it has some problems to transform the units to the world and it's
-far from being production-ready!
 
 ## Getting started
 Add the library to your project's `Cargo.toml` (check last published version):
@@ -99,13 +98,35 @@ impl StyleStrategy for MyStrategy {
 
 Check out more properties to extract from `SvgStyle` in the documentation!
 
+### Load a whole SVG file as an entity
+Plug and play!
+```rust
+use bevy_svg_map::load_svg;
+
+fn setup_whole_svg(
+    commands: Commands,
+    materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+) {
+    load_svg(commands, materials, meshes, "assets/ex.svg", 1., 2.);
+}
+```
+The function returns a command so you can chain components.
+```rust
+  load_svg(commands, materials, meshes, "assets/ex.svg", 1., 2.).
+    with(YourComponent)
+    // etc
+```
+
 
 ## Troubleshooting
-Set up your Document Properties (in Inkscape _Ctrl+Shift+D_) to pixels so that you get the right world units.
+* Set up your Document Properties (in Inkscape _Ctrl+Shift+D_) to pixels so that you get the right world units.
+* See [this comment](https://github.com/carrascomj/bevy_svg_map/issues/1#issuecomment-706611397) about setting SVG output.
 
 ## Features
 * [x] Load Horizontal and Vertical lines.
 * [x] Load other types of [svgtypes](https://github.com/RazrFalcon/svgtypes) [`PathSegment`s]().
 * [x] Provide a [strategy](https://en.wikipedia.org/wiki/Strategy_pattern) trait
 to use the style to add Components and materials.
+* [ ] Basic shapes.
 * [ ] Handling of units.
