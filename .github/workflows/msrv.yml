@@ -5,9 +5,7 @@ on:
     # Branches that sound like default
     branches: 
       - master
-      - main
-      - trunk
-      - dev
+      - crates-io
     # Don't run tests, when only textfiles were modified
     paths-ignore:
       - "COPYRIGHT"
@@ -17,9 +15,7 @@ on:
   pull_request:
     branches: 
       - master
-      - main
-      - trunk
-      - dev
+      - crates-io
     paths-ignore:
       - "COPYRIGHT"
       - "LICENSE-*"
