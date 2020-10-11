@@ -1,4 +1,4 @@
-use bevy_svg_map::{load_svg_map, StyleStrategy, SvgStyle};
+use bevy_svg_map::{load_svg, load_svg_map, StyleStrategy, SvgStyle};
 
 use bevy::prelude::*;
 
@@ -52,6 +52,14 @@ fn setup_custom(
     load_svg_map(commands, materials, meshes, "assets/ex.svg", CustomStrategy);
 }
 
+fn setup_whole_svg(
+    commands: Commands,
+    materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+) {
+    load_svg(commands, materials, meshes, "assets/ex.svg", 1., 2.);
+}
+
 #[test]
 fn can_it_be_added() {
     App::build().add_plugin(TestPlugin);
@@ -60,4 +68,9 @@ fn can_it_be_added() {
 #[test]
 fn custom_style_strategy() {
     App::build().add_startup_system(setup_custom.system());
+}
+
+#[test]
+fn whole_svg() {
+    App::build().add_startup_system(setup_whole_svg.system());
 }
