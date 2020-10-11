@@ -99,10 +99,55 @@ pub fn load_svg_map<T: StyleStrategy>(
                     // .with(Collider::Solid);
                     origin = Vec3::new(origin.x(), y, 0f32);
                 }
-                _ => println!("Found not implemented path"),
+                PathSegment::Quadratic {
+                    abs: _,
+                    x1,
+                    y1,
+                    x,
+                    y,
+                } => {
+                    let to = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    let control = point((*x1 as f32).abs() - x_max, (*y1 as f32).abs() - y_max);
+                    builder.quadratic_bezier_to(control, to);
+                }
+                PathSegment::CurveTo {
+                    abs: _,
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    x,
+                    y,
+                } => {
+                    let to = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    let control1 = point((*x1 as f32).abs() - x_max, (*y1 as f32).abs() - y_max);
+                    let control2 = point((*x2 as f32).abs() - x_max, (*y2 as f32).abs() - y_max);
+                    builder.cubic_bezier_to(control1, control2, to);
+                }
+                PathSegment::EllipticalArc {
+                    abs: _,
+                    rx,
+                    ry,
+                    x_axis_rotation,
+                    large_arc: _,
+                    sweep: _,
+                    x,
+                    y,
+                } => {
+                    let center = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
+                    let (rx, ry) = ((*rx as f32).abs() - x_max, (*ry as f32).abs() - y_max);
+                    builder.arc(
+                        center,
+                        rx,
+                        ry,
+                        std::f32::consts::PI,
+                        *x_axis_rotation as f32,
+                    );
+                }
+                PathSegment::ClosePath { abs: _ } => builder.close(),
+                _ => println!("SVG mapper: Found not implemented path!"),
             }
         }
-        builder.close();
         let path = builder.build();
         strategy.component_decider(
             &style,
