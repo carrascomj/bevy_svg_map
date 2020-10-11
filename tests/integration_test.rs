@@ -54,12 +54,10 @@ fn setup_custom(
 
 #[test]
 fn can_it_be_added() {
-    App::build().add_default_plugins().add_plugin(TestPlugin);
+    App::build().add_plugin(TestPlugin);
 }
 
 #[test]
 fn custom_style_strategy() {
-    App::build()
-        .add_default_plugins()
-        .add_startup_system(setup_custom.system());
+    App::build().add_startup_system(setup_custom.system());
 }
