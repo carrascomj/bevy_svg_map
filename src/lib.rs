@@ -4,6 +4,7 @@ use std::{error::Error, fs};
 use svgtypes::{PathParser, PathSegment};
 
 mod style;
+use style::{build_svg, SvgWhole};
 pub use style::{StyleStrategy, SvgStyle};
 
 /// Struct that parses the svg paths with their style
@@ -39,18 +40,8 @@ fn tokenize_svg(path: &str) -> Result<Vec<StyleSegment>, Box<dyn Error>> {
         .collect())
 }
 
-/// Take the Commands and add Components given the paths in a SVG file
-/// TODO: strategy design: expose a trait with a method that returns materials given style,
-/// and a method that adds Components given the style.
-pub fn load_svg_map<T: StyleStrategy>(
-    mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    svg_map: &str,
-    strategy: T,
-) {
-    // let wall_thickness = 10.0;
-    let (x_max, y_max) = tokenize_svg(svg_map)
+fn max_coords(svg_map: &str) -> (f64, f64) {
+    tokenize_svg(svg_map)
         .unwrap()
         .iter()
         .flat_map(|n| n.traces.iter())
@@ -64,85 +55,53 @@ pub fn load_svg_map<T: StyleStrategy>(
                 None => acc.1,
             };
             (x_f, y_f)
-        });
-    let (x_max, y_max) = ((x_max / 2.) as f32, (y_max / 2.) as f32);
+        })
+}
+
+fn max_coords_doc(svg_map: &str) -> (f64, f64) {
+    let xmlfile = fs::read_to_string(svg_map).unwrap();
+    let doc = roxmltree::Document::parse(&xmlfile).unwrap();
+    (
+        doc.descendants()
+            .filter(|n| n.tag_name().name() == "svg")
+            .map(|n| n.attribute("width").unwrap().parse().unwrap())
+            .last()
+            .unwrap(),
+        doc.descendants()
+            .filter(|n| n.tag_name().name() == "svg")
+            .map(|n| n.attribute("height").unwrap().parse().unwrap())
+            .last()
+            .unwrap(),
+    )
+}
+
+/// For each of the paths in a SVG file, apply a StyleStrategy to translate them into entities with
+/// functionality added to them, dependent of the SVG properties of the path (stroke, fill...)
+pub fn load_svg_map<T: StyleStrategy>(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    svg_map: &str,
+    strategy: T,
+) {
+    // let wall_thickness = 10.0;
+    let (x_max, y_max) = max_coords(svg_map);
+    let (x_max, y_max) = (x_max / 2., y_max / 2.);
 
     for StyleSegment { style, traces } in tokenize_svg(svg_map).unwrap().iter() {
         let mut origin = Vec3::new(0f32, 0f32, 0f32);
         let color_handle = materials.add(strategy.color_decider(style).into());
         let mut builder = PathBuilder::new();
         for tok in traces.iter() {
-            match tok {
-                PathSegment::MoveTo { abs: _, x, y } => {
-                    let (x, y) = ((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
-                    origin = Vec3::new(x, y, 0f32);
-                    builder.move_to(point(x, y));
-                }
-                PathSegment::LineTo { abs: _, x, y } => {
-                    let (x, y) = ((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
-                    origin = Vec3::new(x, y, 0f32);
-                    builder.line_to(point(x, y));
-                }
-                PathSegment::HorizontalLineTo { abs: _, x } => {
-                    let x = (*x as f32).abs() - x_max;
-                    builder.line_to(point(x, origin.y()));
-                    // .with(Collider::Solid);
-                    origin = Vec3::new(x, origin.y(), 0f32);
-                }
-                PathSegment::VerticalLineTo { abs: _, y } => {
-                    let y = (*y as f32).abs() - y_max;
-                    builder.line_to(point(origin.x(), y));
-                    // .with(Collider::Solid);
-                    origin = Vec3::new(origin.x(), y, 0f32);
-                }
-                PathSegment::Quadratic {
-                    abs: _,
-                    x1,
-                    y1,
-                    x,
-                    y,
-                } => {
-                    let to = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
-                    let control = point((*x1 as f32).abs() - x_max, (*y1 as f32).abs() - y_max);
-                    builder.quadratic_bezier_to(control, to);
-                }
-                PathSegment::CurveTo {
-                    abs: _,
-                    x1,
-                    y1,
-                    x2,
-                    y2,
-                    x,
-                    y,
-                } => {
-                    let to = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
-                    let control1 = point((*x1 as f32).abs() - x_max, (*y1 as f32).abs() - y_max);
-                    let control2 = point((*x2 as f32).abs() - x_max, (*y2 as f32).abs() - y_max);
-                    builder.cubic_bezier_to(control1, control2, to);
-                }
-                PathSegment::EllipticalArc {
-                    abs: _,
-                    rx,
-                    ry,
-                    x_axis_rotation,
-                    large_arc: _,
-                    sweep: _,
-                    x,
-                    y,
-                } => {
-                    let center = point((*x as f32).abs() - x_max, (*y as f32).abs() - y_max);
-                    let (rx, ry) = ((*rx as f32).abs() - x_max, (*ry as f32).abs() - y_max);
-                    builder.arc(
-                        center,
-                        rx,
-                        ry,
-                        std::f32::consts::PI,
-                        *x_axis_rotation as f32,
-                    );
-                }
-                PathSegment::ClosePath { abs: _ } => builder.close(),
-                _ => println!("SVG mapper: Found not implemented path!"),
-            }
+            origin = build_svg(
+                tok,
+                &mut builder,
+                origin,
+                x_max as f32,
+                y_max as f32,
+                1.,
+                1.,
+            );
         }
         let path = builder.build();
         strategy.component_decider(
@@ -160,6 +119,57 @@ pub fn load_svg_map<T: StyleStrategy>(
             ),
         )
     }
+}
+
+/// Load a SVG file as an Entity, return the Commands to allot the user to further modify it
+pub fn load_svg(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    svg_map: &str,
+    width: f32,
+    height: f32,
+) -> Commands {
+    let (x_in, y_in) = max_coords_doc(svg_map);
+    let (x_max, y_max) = max_coords(svg_map);
+    let (x_max, y_max) = (x_max / 2., y_max / 2.);
+    let (scale_x, scale_y) = ((width / x_in as f32), (height / y_in as f32));
+
+    let mut origin = Vec3::new(0f32, 0f32, 0f32);
+    // let mut sprites = Vec::new();
+    commands.spawn((Transform::default(), GlobalTransform::default()));
+    let parent = commands.current_entity().unwrap();
+    for StyleSegment { style, traces } in tokenize_svg(svg_map).unwrap().iter() {
+        let mut builder = PathBuilder::new();
+        let color_handle = materials.add(SvgWhole.color_decider(style).into());
+        for tok in traces.iter() {
+            origin = build_svg(
+                tok,
+                &mut builder,
+                origin,
+                x_max as f32,
+                y_max as f32,
+                scale_x,
+                // given the default Transform and the modifications in build_svg, this is the
+                // way of getting it right
+                -scale_y,
+            );
+        }
+        let path = builder.build();
+        let sprite = path.stroke(
+            color_handle,
+            &mut meshes,
+            Vec3::new(0.0, 0.0, 0.0),
+            &StrokeOptions::default()
+                .with_line_width(5.0)
+                .with_line_cap(LineCap::Round)
+                .with_line_join(LineJoin::Round),
+        );
+        commands.spawn(sprite);
+        let sprite1 = commands.current_entity().unwrap();
+        commands.push_children(parent, &[sprite1]);
+    }
+    commands
 }
 
 #[cfg(test)]
