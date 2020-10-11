@@ -105,9 +105,9 @@ impl From<&str> for SvgStyle {
     fn from(style: &str) -> Self {
         SvgStyle(
             style
-                .split(";")
+                .split(';')
                 .map(|n| {
-                    let a: Vec<&str> = n.split(":").take(2).collect();
+                    let a: Vec<&str> = n.split(':').take(2).collect();
                     (a[0].to_string(), a[1].to_string())
                 })
                 .collect::<HashMap<String, String>>(),
@@ -125,9 +125,7 @@ pub trait StyleStrategy {
     fn color_decider(&self, _style: &SvgStyle) -> Color {
         Color::BLACK
     }
-    fn component_decider(&self, _style: &SvgStyle, _sprite: &mut bevy::prelude::Commands) {
-        ()
-    }
+    fn component_decider(&self, _style: &SvgStyle, _sprite: &mut bevy::prelude::Commands) {}
 }
 
 #[cfg(test)]

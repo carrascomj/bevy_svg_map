@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use roxmltree;
 use std::{error::Error, fs};
 use svgtypes::{PathParser, PathSegment};
 
@@ -25,10 +24,7 @@ impl From<(&str, &str)> for StyleSegment {
 /// Return a zero-cost read-only view of the svg XML document as a graph
 fn take_lines_with_style<'a>(doc: &'a roxmltree::Document) -> Vec<(&'a str, &'a str)> {
     doc.descendants()
-        .filter(|n| match n.attribute("d") {
-            Some(_) => true,
-            _ => false,
-        })
+        .filter(|n| matches!(n.attribute("d"), Some(_)))
         .map(|n| (n.attribute("style").unwrap(), n.attribute("d").unwrap()))
         .collect()
 }
