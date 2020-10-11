@@ -105,7 +105,7 @@ Set up your Document Properties (in Inkscape _Ctrl+Shift+D_) to pixels so that y
 
 ## Features
 * [x] Load Horizontal and Vertical lines.
-* [ ] Load other types of [svgtypes](https://github.com/RazrFalcon/svgtypes) [`PathSegment`s]().
+* [x] Load other types of [svgtypes](https://github.com/RazrFalcon/svgtypes) [`PathSegment`s]().
 * [x] Provide a [strategy](https://en.wikipedia.org/wiki/Strategy_pattern) trait
 to use the style to add Components and materials.
 * [ ] Handling of units.
