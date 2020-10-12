@@ -5,6 +5,18 @@ use std::str::FromStr;
 use svgtypes::PathSegment;
 use svgtypes::{Length, NumberList, Paint};
 
+fn linear_to_nonlinear_srgb(num: f32) -> u8 {
+    let res: f32;
+    if num <= 0.0 || num == 1. {
+        res = num;
+    } else if num <= 0.0031308 {
+        res = num * 12.92; // linear falloff in dark values
+    } else {
+        res = (1.055 * num.powf(1.0 / 2.4)) - 0.055 //gamma curve in other area
+    }
+    (res * 255.0) as u8
+}
+
 /// Translater from SVG style (&str slice) to bevy (passing )
 /// The string slice is parsed into a HashMap. Lazy accession to its values.
 /// Chief struct to implement the user-provided strategy to associate components/materials given
@@ -29,9 +41,10 @@ use svgtypes::{Length, NumberList, Paint};
 pub struct SvgStyle(HashMap<String, String>);
 
 /// Helper function that transforms from str to svgtypes' Color to bevy's Color
-fn to_color(color: &str, opacity: f32) -> Option<Color> {
+fn to_color(color: &str, opacity: u8) -> Option<Color> {
+    println!("{}", opacity);
     if let Ok(Paint::Color(svgtypes::Color { red, green, blue })) = Paint::from_str(color) {
-        Some(Color::rgba(red as f32, green as f32, blue as f32, opacity))
+        Some(Color::rgba_u8(red as u8, green as u8, blue as u8, opacity))
     } else {
         None
     }
@@ -42,8 +55,8 @@ impl SvgStyle {
         to_color(
             self.panic_access("stroke"),
             match self.stroke_opacity() {
-                Ok(c) => c,
-                _ => 1f32,
+                Ok(c) => linear_to_nonlinear_srgb(c),
+                _ => 255,
             },
         )
     }
@@ -51,8 +64,8 @@ impl SvgStyle {
         to_color(
             self.panic_access("fill"),
             match self.fill_opacity() {
-                Ok(c) => c,
-                _ => 1f32,
+                Ok(c) => linear_to_nonlinear_srgb(c),
+                _ => 255,
             },
         )
     }
