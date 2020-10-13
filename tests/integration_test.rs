@@ -57,7 +57,15 @@ fn setup_whole_svg(
     materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
-    load_svg(commands, materials, meshes, "assets/ex.svg", 1., 2.);
+    load_svg(
+        commands,
+        materials,
+        meshes,
+        "assets/ex.svg",
+        1.,
+        2.,
+        Vec2::new(0., 0.),
+    );
 }
 
 #[test]

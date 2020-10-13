@@ -1,13 +1,12 @@
-use bevy::prelude::{Color, Vec3};
-use bevy_prototype_lyon::prelude::*;
+use bevy::prelude::Color;
 use std::collections::HashMap;
 use std::str::FromStr;
-use svgtypes::PathSegment;
 use svgtypes::{Length, NumberList, Paint};
 
+/// Adapted from bevy_render
 fn linear_to_nonlinear_srgb(num: f32) -> u8 {
     let res: f32;
-    if num <= 0.0 || num == 1. {
+    if num <= 0.0 || num >= 0.99 {
         res = num;
     } else if num <= 0.0031308 {
         res = num * 12.92; // linear falloff in dark values
@@ -16,8 +15,32 @@ fn linear_to_nonlinear_srgb(num: f32) -> u8 {
     }
     (res * 255.0) as u8
 }
+/// Helper function that transforms from str to svgtypes' Color to bevy's Color
+fn to_color(color: &str, opacity: u8) -> Option<Color> {
+    if let Ok(Paint::Color(svgtypes::Color { red, green, blue })) = Paint::from_str(color) {
+        Some(Color::rgba_u8(red as u8, green as u8, blue as u8, opacity))
+    } else {
+        None
+    }
+}
 
-/// Translater from SVG style (&str slice) to bevy (passing )
+/// Stores the style and the SVG type (later parsed by lyon and svgtypes)
+/// It corresponds to a single SpriteComponent
+#[derive(Debug)]
+pub struct StyleSegment {
+    pub style: SvgStyle,
+    pub traces: String,
+}
+
+impl From<(&str, &str)> for StyleSegment {
+    fn from(tup: (&str, &str)) -> Self {
+        let style: SvgStyle = SvgStyle::from(tup.0);
+        let traces = tup.1.to_string();
+        StyleSegment { style, traces }
+    }
+}
+
+/// Translater from SVG style (&str slice) to bevy
 /// The string slice is parsed into a HashMap. Lazy accession to its values.
 /// Chief struct to implement the user-provided strategy to associate components/materials given
 /// the style of the path.
@@ -39,16 +62,6 @@ fn linear_to_nonlinear_srgb(num: f32) -> u8 {
 /// ```
 #[derive(Debug)]
 pub struct SvgStyle(HashMap<String, String>);
-
-/// Helper function that transforms from str to svgtypes' Color to bevy's Color
-fn to_color(color: &str, opacity: u8) -> Option<Color> {
-    println!("{}", opacity);
-    if let Ok(Paint::Color(svgtypes::Color { red, green, blue })) = Paint::from_str(color) {
-        Some(Color::rgba_u8(red as u8, green as u8, blue as u8, opacity))
-    } else {
-        None
-    }
-}
 
 impl SvgStyle {
     pub fn stroke(&self) -> Option<Color> {
@@ -136,6 +149,8 @@ impl Default for SvgStyle {
     }
 }
 
+/// This trait is implemented by the user as the Strategy to add functionaly to the paths based
+/// on its properties (stored in `SvgStyle`).
 pub trait StyleStrategy {
     fn color_decider(&self, _style: &SvgStyle) -> Color {
         Color::BLACK
@@ -143,6 +158,8 @@ pub trait StyleStrategy {
     fn component_decider(&self, _style: &SvgStyle, _sprite: &mut bevy::prelude::Commands) {}
 }
 
+/// Used when loading whole SVG files as a single entity.
+/// Implements StyleStrategy to literal visual properties.
 pub struct SvgWhole;
 
 // TODO implement everything
@@ -154,102 +171,6 @@ impl StyleStrategy for SvgWhole {
             _ => Color::RED,
         }
     }
-}
-
-pub fn build_svg(
-    token: &PathSegment,
-    builder: &mut PathBuilder,
-    origin: Vec3,
-    x_max: f32,
-    y_max: f32,
-    x_scale: f32,
-    y_scale: f32,
-) -> Vec3 {
-    let transform = |x: &f64, y: &f64| -> (f32, f32) {
-        (
-            ((*x as f32).abs() - x_max) * x_scale,
-            ((*y as f32).abs() - y_max) * y_scale,
-        )
-    };
-    let mut new_origin = Vec3::from(origin);
-    match token {
-        PathSegment::MoveTo { abs: _, x, y } => {
-            let (x, y) = transform(x, y);
-            new_origin = Vec3::new(x, y, 0f32);
-            builder.move_to(point(x, y));
-        }
-        PathSegment::LineTo { abs: _, x, y } => {
-            let (x, y) = transform(x, y);
-            new_origin = Vec3::new(x, y, 0f32);
-            builder.line_to(point(x, y));
-        }
-        PathSegment::HorizontalLineTo { abs: _, x } => {
-            let (x, _) = transform(x, &0f64);
-            builder.line_to(point(x, origin.y()));
-            new_origin = Vec3::new(x, origin.y(), 0f32);
-        }
-        PathSegment::VerticalLineTo { abs: _, y } => {
-            let (_, y) = transform(&0f64, y);
-            builder.line_to(point(origin.x(), y));
-            new_origin = Vec3::new(origin.x(), y, 0f32);
-        }
-        PathSegment::Quadratic {
-            abs: _,
-            x1,
-            y1,
-            x,
-            y,
-        } => {
-            let (x, y) = transform(x, y);
-            let to = point(x, y);
-            let control = point((*x1 as f32).abs() - x_max, (*y1 as f32).abs() - y_max);
-            builder.quadratic_bezier_to(control, to);
-            new_origin = Vec3::new(to.x, to.y, 0f32);
-        }
-        PathSegment::CurveTo {
-            abs: _,
-            x1,
-            y1,
-            x2,
-            y2,
-            x,
-            y,
-        } => {
-            let (x, y) = transform(x, y);
-            let to = point(x, y);
-            let (x1, y1) = transform(x1, y1);
-            let control1 = point(x1, y1);
-            let (x2, y2) = transform(x2, y2);
-            let control2 = point(x2, y2);
-            builder.cubic_bezier_to(control1, control2, to);
-            new_origin = Vec3::new(to.x, to.y, 0f32);
-        }
-        PathSegment::EllipticalArc {
-            abs: _,
-            rx,
-            ry,
-            x_axis_rotation,
-            large_arc: _,
-            sweep: _,
-            x,
-            y,
-        } => {
-            let (x, y) = transform(x, y);
-            let center = point(x, y);
-            let (rx, ry) = transform(rx, ry);
-            builder.arc(
-                center,
-                rx,
-                ry,
-                std::f32::consts::PI,
-                *x_axis_rotation as f32,
-            );
-            new_origin = Vec3::new(center.x, center.y, 0f32);
-        }
-        PathSegment::ClosePath { abs: _ } => builder.close(),
-        _ => println!("SVG mapper: Found not implemented path!"),
-    }
-    new_origin
 }
 
 #[cfg(test)]
