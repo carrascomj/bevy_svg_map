@@ -11,11 +11,18 @@ add functionality, setting the foundation for a very weird workflow: Vector Grap
 ![alt text](./assets/showcase.png "Two images showing the workflow form Inkscape to a bevy Runtime")
 
 ## Getting started
-Add the library to your project's `Cargo.toml` (check last published version):
+Add the library to your project's `Cargo.toml` (check last published version,
+it corresponds to the stable version on the branch [`crates.io`](https://github.com/carrascomj/bevy_svg_map/tree/crates-io)):
 ```toml
 [dependencies]
 bevy_svg_map = "0.1"
 ```
+If you want the bleeding edge (corresponds to [`master`](https://github.com/carrascomj/bevy_svg_map/tree/master/)):
+```toml
+[dependencies]
+bevy_svg_map = {git="https://github.com/carrascomj/bevy_svg_map.git"}
+```
+> :warning: The master branch points to each master branch of **bevy** and [**lyon**](https://github.com/nical/lyon). Use with caution!
 
 The library provides a function to be used inside a bevy's startup_system.
 Here, we are loading the file `ex.svg` under the `assets/` directory.
