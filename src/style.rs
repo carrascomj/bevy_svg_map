@@ -1,4 +1,5 @@
 use bevy::prelude::Color;
+use lyon::lyon_tessellation::{LineCap, LineJoin};
 use std::collections::HashMap;
 use std::str::FromStr;
 use svgtypes::{Length, NumberList, Paint};
@@ -82,8 +83,31 @@ impl SvgStyle {
             },
         )
     }
-    pub fn stroke_dashmap(&self) -> Option<NumberList> {
-        match self.0.get("stroke-dashmap") {
+    /// The resulting [`svgtypes::NumberList`](https://docs.rs/svgtypes/0.5.0/src/svgtypes/number_list.rs.html)
+    /// can be treated as Vec<f64>
+    /// See: [<list-of-numbers>](https://www.w3.org/TR/SVG11/types.html#DataTypeList)
+    /// ```
+    /// # use bevy_svg_map::SvgStyle;
+    /// # use bevy::prelude::Color;
+    /// use svgtypes::NumberList;
+    ///
+    /// let style = SvgStyle::from("stroke:#000000;stroke-dasharray:3,1");
+    /// assert_eq!(
+    ///     style.stroke_dasharray().unwrap()[0],
+    ///     3f64
+    /// );
+    /// ```
+    /// It also implements `Iter`
+    /// ```
+    /// # use bevy_svg_map::SvgStyle;
+    /// # use bevy::prelude::Color;
+    /// use svgtypes::NumberList;
+    ///
+    /// let style = SvgStyle::from("stroke:#000000;stroke-dasharray:3,1");
+    /// assert_eq!(style.stroke_dasharray().unwrap().iter().sum::<f64>(), 4f64);
+    /// ```
+    pub fn stroke_dasharray(&self) -> Option<NumberList> {
+        match self.0.get("stroke-dasharray") {
             Some(c) => Some(c.parse().unwrap()),
             _ => None,
         }
@@ -116,6 +140,57 @@ impl SvgStyle {
             Some(num as f32)
         } else {
             None
+        }
+    }
+    /// Parse the string as a Lyon LineCap
+    /// See: https://svgwg.org/specs/strokes/#StrokeLinecapProperty
+    ///
+    /// ```
+    /// # use bevy_svg_map::SvgStyle;
+    /// # use bevy::prelude::Color;
+    /// use lyon::lyon_tessellation::LineCap;
+    ///
+    /// let style = SvgStyle::from("stroke-linecap:butt;stroke-linejoin:miter");
+    /// assert_eq!(
+    ///     style.stroke_linecap().unwrap(),
+    ///     LineCap::Butt
+    /// );
+    /// ```
+    pub fn stroke_linecap(&self) -> Option<LineCap> {
+        match self.0.get("stroke-linecap") {
+            Some(c) => match c.as_ref() {
+                "butt" => Some(LineCap::Butt),
+                "round" => Some(LineCap::Round),
+                "square" => Some(LineCap::Square),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+    /// Parse the string as a Lyon LineJoin
+    /// See: https://svgwg.org/specs/strokes/#StrokeLinejoinProperty
+    ///
+    /// ```
+    /// # use bevy_svg_map::SvgStyle;
+    /// # use bevy::prelude::Color;
+    /// use lyon::lyon_tessellation::LineJoin;
+    ///
+    /// let style = SvgStyle::from("stroke-linecap:butt;stroke-linejoin:miter");
+    /// assert_eq!(
+    ///     style.stroke_linejoin().unwrap(),
+    ///     LineJoin::Miter
+    /// );
+    /// ```
+    pub fn stroke_linejoin(&self) -> Option<LineJoin> {
+        match self.0.get("stroke-linejoin") {
+            Some(c) => match c.as_ref() {
+                "butt" => Some(LineJoin::Bevel),
+                "miter" => Some(LineJoin::Miter),
+                "miterclip" => Some(LineJoin::MiterClip),
+                "round" => Some(LineJoin::Round),
+                _ => None,
+            },
+            _ => None,
         }
     }
     fn panic_access(&self, key: &str) -> &str {
