@@ -15,7 +15,8 @@ license = "MIT"
 svgtypes="0.5.0"
 roxmltree="0.13.0"
 lyon = {git="https://github.com/nical/lyon.git", features=["svg"]}
-euclid = "*"
+# lyon = {version="0.16.2", features=["svg"]}
+euclid = "0.22.1"
 
 [dependencies.bevy]
 git = "https://github.com/bevyengine/bevy.git"
