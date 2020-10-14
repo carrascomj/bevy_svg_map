@@ -230,6 +230,24 @@ pub trait StyleStrategy {
     fn color_decider(&self, _style: &SvgStyle) -> Color {
         Color::BLACK
     }
+    fn width_decider(&self, style: &SvgStyle) -> f32 {
+        match style.stroke_width() {
+            Some(c) => c,
+            _ => 0.264583,
+        }
+    }
+    fn linecap_decider(&self, style: &SvgStyle) -> LineCap {
+        match style.stroke_linecap() {
+            Some(c) => c,
+            _ => LineCap::Butt,
+        }
+    }
+    fn linejoin_decider(&self, style: &SvgStyle) -> LineJoin {
+        match style.stroke_linejoin() {
+            Some(c) => c,
+            _ => LineJoin::Miter,
+        }
+    }
     fn component_decider(&self, _style: &SvgStyle, _sprite: &mut bevy::prelude::Commands) {}
 }
 
