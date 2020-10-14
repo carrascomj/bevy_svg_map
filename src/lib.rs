@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use euclid::default::Transform2D;
 use lyon::svg::path_utils::build_path;
-use lyon::tessellation::{LineCap, LineJoin, StrokeOptions};
+use lyon::tessellation::StrokeOptions;
 use std::{error::Error, fs};
 use svgtypes::PathParser;
 
@@ -96,9 +96,9 @@ pub fn load_svg_map<T: StyleStrategy>(
                 &mut meshes,
                 Vec3::new(-x_max, -y_max, 0.0),
                 &StrokeOptions::default()
-                    .with_line_width(5.0)
-                    .with_line_cap(LineCap::Round)
-                    .with_line_join(LineJoin::Round),
+                    .with_line_width(strategy.width_decider(style))
+                    .with_line_cap(strategy.linecap_decider(style))
+                    .with_line_join(strategy.linejoin_decider(style)),
             )),
         )
     }
@@ -141,7 +141,7 @@ pub fn load_svg(
             &mut meshes,
             Vec3::new(-x_max, -y_max, 0.0),
             &StrokeOptions::default()
-                .with_line_width(SvgWhole.width_decider(style).into())
+                .with_line_width(SvgWhole.width_decider(style))
                 .with_line_cap(SvgWhole.linecap_decider(style))
                 .with_line_join(SvgWhole.linejoin_decider(style)),
         );
