@@ -141,9 +141,9 @@ pub fn load_svg(
             &mut meshes,
             Vec3::new(-x_max, -y_max, 0.0),
             &StrokeOptions::default()
-                .with_line_width(5.0)
-                .with_line_cap(LineCap::Round)
-                .with_line_join(LineJoin::Round),
+                .with_line_width(SvgWhole.width_decider(style).into())
+                .with_line_cap(SvgWhole.linecap_decider(style))
+                .with_line_join(SvgWhole.linejoin_decider(style)),
         );
         commands.spawn(sprite);
         let sprite1 = commands.current_entity().unwrap();
