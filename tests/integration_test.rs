@@ -68,6 +68,22 @@ fn setup_whole_svg(
     );
 }
 
+fn setup_with_shapes(
+    commands: Commands,
+    materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+) {
+    load_svg(
+        commands,
+        materials,
+        meshes,
+        "assets/with_shapes.svg",
+        64.,
+        64.,
+        Vec2::new(0., 0.),
+    );
+}
+
 #[test]
 fn can_it_be_added() {
     App::build().add_plugin(TestPlugin);
@@ -81,4 +97,9 @@ fn custom_style_strategy() {
 #[test]
 fn whole_svg() {
     App::build().add_startup_system(setup_whole_svg.system());
+}
+
+#[test]
+fn whole_svg_with_shapes() {
+    App::build().add_startup_system(setup_with_shapes.system());
 }
