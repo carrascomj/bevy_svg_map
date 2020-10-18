@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use euclid::default::Transform2D;
 use lyon::svg::path_utils::build_path;
-use lyon::tessellation::StrokeOptions;
+use lyon::tessellation::{FillOptions, StrokeOptions};
+use std::str::FromStr;
 use std::{error::Error, fs};
-use svgtypes::PathParser;
+use svgtypes::{Length, PathParser};
 
 mod lyon_utils;
 // pub use lyon_utils::{build_path, stroke};
-pub use lyon_utils::stroke;
 mod style;
 use style::{StyleSegment, SvgWhole};
 pub use style::{StyleStrategy, SvgStyle};
@@ -48,19 +48,24 @@ fn max_coords(svg_map: &str) -> (f64, f64) {
         })
 }
 
+/// Read from <svg width="" and height="">
 fn max_coords_doc(svg_map: &str) -> (f64, f64) {
     let xmlfile = fs::read_to_string(svg_map).unwrap();
     let doc = roxmltree::Document::parse(&xmlfile).unwrap();
     (
         doc.descendants()
             .filter(|n| n.tag_name().name() == "svg")
-            .map(|n| n.attribute("width").unwrap().parse().unwrap())
-            .last()
+            .map(|n| Length::from_str(n.attribute("width").unwrap()).unwrap().num)
+            .next()
             .unwrap(),
         doc.descendants()
             .filter(|n| n.tag_name().name() == "svg")
-            .map(|n| n.attribute("height").unwrap().parse().unwrap())
-            .last()
+            .map(|n| {
+                Length::from_str(n.attribute("height").unwrap())
+                    .unwrap()
+                    .num
+            })
+            .next()
             .unwrap(),
     )
 }
@@ -90,7 +95,7 @@ pub fn load_svg_map<T: StyleStrategy>(
         let path = build_path(builder, traces).unwrap();
         strategy.component_decider(
             &style,
-            commands.spawn(stroke(
+            commands.spawn(lyon_utils::stroke(
                 path,
                 color_handle,
                 &mut meshes,
@@ -133,21 +138,36 @@ pub fn load_svg(
                 .pre_rotate(euclid::Angle::radians(std::f32::consts::PI / 2.)) // rotate 180º for some reason
                 .then(&Transform2D::new(0f32, 1f32, 1f32, 0f32, 0f32, 0f32)), // mirror for some reason
         );
-        let color_handle = materials.add(SvgWhole.color_decider(style).into());
         let path = build_path(builder, traces).unwrap();
-        let sprite = stroke(
-            path,
-            color_handle,
-            &mut meshes,
-            Vec3::new(-x_max, -y_max, 0.0),
-            &StrokeOptions::default()
-                .with_line_width(SvgWhole.width_decider(style))
-                .with_line_cap(SvgWhole.linecap_decider(style))
-                .with_line_join(SvgWhole.linejoin_decider(style)),
-        );
-        commands.spawn(sprite);
-        let sprite1 = commands.current_entity().unwrap();
-        commands.push_children(parent, &[sprite1]);
+        if matches!(style.stroke(), Some(_)) {
+            let color_handle = materials.add(SvgWhole.color_decider(style).into());
+            let stroke = lyon_utils::stroke(
+                path.clone(),
+                color_handle,
+                &mut meshes,
+                Vec3::new(-x_max, -y_max, 0.0),
+                &StrokeOptions::default()
+                    .with_line_width(SvgWhole.width_decider(style))
+                    .with_line_cap(SvgWhole.linecap_decider(style))
+                    .with_line_join(SvgWhole.linejoin_decider(style)),
+            );
+            commands.spawn(stroke);
+            let sprite1 = commands.current_entity().unwrap();
+            commands.push_children(parent, &[sprite1]);
+        }
+        if matches!(style.fill(), Some(_)) {
+            let color_fill_handle = materials.add(SvgWhole.color_fill_decider(style).into());
+            let fill = lyon_utils::fill(
+                path,
+                color_fill_handle,
+                &mut meshes,
+                Vec3::new(-x_max, -y_max, 0.0),
+                &FillOptions::default(),
+            );
+            commands.spawn(fill);
+            let sprite1 = commands.current_entity().unwrap();
+            commands.push_children(parent, &[sprite1]);
+        }
     }
     commands
 }

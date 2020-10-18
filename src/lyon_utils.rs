@@ -4,7 +4,8 @@ use bevy::{
     render::mesh::{Indices, VertexAttribute},
 };
 use lyon::tessellation::{
-    BuffersBuilder, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers,
+    BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
+    StrokeVertex, VertexBuffers,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -36,6 +37,8 @@ impl From<Geometry> for Mesh {
 
 /// Returns a `SpriteComponents` bundle with the given [`Geometry`](Geometry)
 /// and `ColorMaterial`.
+///
+/// adapted from [bevy_prototype_lyon](https://github.com/Nilirad/bevy_prototype_lyon/blob/master/src/path.rs)
 fn create_sprite(
     material: Handle<ColorMaterial>,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -54,6 +57,9 @@ fn create_sprite(
     }
 }
 
+/// Stroke to bevy components.
+///
+/// adapted from [bevy_prototype_lyon](https://github.com/Nilirad/bevy_prototype_lyon/blob/master/src/path.rs)
 pub fn stroke(
     path: lyon::path::Path,
     material: Handle<ColorMaterial>,
@@ -68,6 +74,31 @@ pub fn stroke(
             path.as_slice(),
             options,
             &mut BuffersBuilder::new(&mut geometry.0, |pos: StrokeVertex| {
+                [pos.position().x, pos.position().y, 0.0]
+            }),
+        )
+        .unwrap();
+
+    create_sprite(material, meshes, geometry, translation)
+}
+
+/// Fill to bevy components.
+///
+/// adapted from [bevy_prototype_lyon](https://github.com/Nilirad/bevy_prototype_lyon/blob/master/src/path.rs)
+pub fn fill(
+    path: lyon::path::Path,
+    material: Handle<ColorMaterial>,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    translation: Vec3,
+    options: &FillOptions,
+) -> SpriteComponents {
+    let mut tessellator = FillTessellator::new();
+    let mut geometry = Geometry(VertexBuffers::new());
+    tessellator
+        .tessellate_path(
+            path.as_slice(),
+            options,
+            &mut BuffersBuilder::new(&mut geometry.0, |pos: FillVertex| {
                 [pos.position().x, pos.position().y, 0.0]
             }),
         )
