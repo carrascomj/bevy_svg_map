@@ -230,6 +230,9 @@ pub trait StyleStrategy {
     fn color_decider(&self, _style: &SvgStyle) -> Color {
         Color::BLACK
     }
+    fn color_fill_decider(&self, _style: &SvgStyle) -> Color {
+        Color::BLACK
+    }
     fn width_decider(&self, style: &SvgStyle) -> f32 {
         match style.stroke_width() {
             Some(c) => c,
@@ -259,6 +262,13 @@ pub struct SvgWhole;
 impl StyleStrategy for SvgWhole {
     fn color_decider(&self, style: &SvgStyle) -> Color {
         match style.stroke() {
+            Some(c) => c,
+            // add red lines if the Color could not be parsed from the SVG
+            _ => Color::RED,
+        }
+    }
+    fn color_fill_decider(&self, style: &SvgStyle) -> Color {
+        match style.fill() {
             Some(c) => c,
             // add red lines if the Color could not be parsed from the SVG
             _ => Color::RED,
