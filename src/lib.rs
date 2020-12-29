@@ -73,7 +73,7 @@ fn max_coords_doc(svg_map: &str) -> (f64, f64) {
 /// For each of the paths in a SVG file, apply a StyleStrategy to translate them into entities with
 /// functionality added to them, dependent of the SVG properties of the path (stroke, fill...)
 pub fn load_svg_map<T: StyleStrategy>(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     svg_map: &str,
@@ -110,25 +110,23 @@ pub fn load_svg_map<T: StyleStrategy>(
 }
 
 /// Load a SVG file as an Entity, return the Commands to allow the user to further modify it
-pub fn load_svg(
-    mut commands: Commands,
+pub fn load_svg<'cmds>(
+    commands: &'cmds mut Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     svg_map: &str,
     width: f32,
     height: f32,
     position: Vec2,
-) -> Commands {
+) -> &'cmds mut Commands {
     let (x_in, y_in) = max_coords_doc(svg_map);
     let (x_max, y_max) = max_coords(svg_map);
     let (x_max, y_max) = (x_max as f32 / 2., y_max as f32 / 2.);
     let (scale_x, scale_y) = ((width / x_in as f32), (height / y_in as f32));
 
     // let mut sprites = Vec::new();
-    let mut tr = Transform::default();
-    let mut globe = GlobalTransform::default();
-    tr.set_translation(position.extend(0f32));
-    globe.set_translation(position.extend(0f32));
+    let tr = Transform::from_translation(position.extend(0f32));
+    let globe = GlobalTransform::from_translation(position.extend(0f32));
     commands.spawn((tr, globe));
     // TODO: this transformation are a joke...
     let parent = commands.current_entity().unwrap();

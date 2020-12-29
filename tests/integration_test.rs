@@ -37,7 +37,7 @@ impl Plugin for TestPlugin {
 }
 
 fn setup(
-    commands: Commands,
+    commands: &mut Commands,
     materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -45,7 +45,7 @@ fn setup(
 }
 
 fn setup_custom(
-    commands: Commands,
+    commands: &mut Commands,
     materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -53,7 +53,7 @@ fn setup_custom(
 }
 
 fn setup_whole_svg(
-    commands: Commands,
+    commands: &mut Commands,
     materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -69,7 +69,7 @@ fn setup_whole_svg(
 }
 
 fn setup_with_shapes(
-    commands: Commands,
+    commands: &mut Commands,
     materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
