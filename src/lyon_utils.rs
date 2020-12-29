@@ -1,7 +1,7 @@
 //! Mainly taken from bevy_input_prototype
 use bevy::{
     prelude::*,
-    render::mesh::{Indices, VertexAttribute},
+    render::mesh::Indices,
 };
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
@@ -17,9 +17,8 @@ impl From<Geometry> for Mesh {
     fn from(geometry: Geometry) -> Self {
         let num_vertices = geometry.0.vertices.len();
         let mut mesh = Self::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
-        mesh.indices = Some(Indices::U32(geometry.0.indices));
-        mesh.attributes
-            .push(VertexAttribute::position(geometry.0.vertices));
+        mesh.set_indices(Some(Indices::U32(geometry.0.indices)));
+        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, geometry.0.vertices);
 
         let mut normals: Vec<[f32; 3]> = Vec::new();
         let mut uvs: Vec<[f32; 2]> = Vec::new();
@@ -28,8 +27,8 @@ impl From<Geometry> for Mesh {
             uvs.push([0.0, 0.0]);
         }
 
-        mesh.attributes.push(VertexAttribute::normal(normals));
-        mesh.attributes.push(VertexAttribute::uv(uvs));
+        mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
 
         mesh
     }
@@ -44,8 +43,8 @@ fn create_sprite(
     meshes: &mut ResMut<Assets<Mesh>>,
     geometry: Geometry,
     translation: Vec3,
-) -> SpriteComponents {
-    SpriteComponents {
+) -> SpriteBundle {
+    SpriteBundle {
         material,
         mesh: meshes.add(geometry.into()),
         sprite: Sprite {
@@ -66,7 +65,7 @@ pub fn stroke(
     meshes: &mut ResMut<Assets<Mesh>>,
     translation: Vec3,
     options: &StrokeOptions,
-) -> SpriteComponents {
+) -> SpriteBundle {
     let mut tessellator = StrokeTessellator::new();
     let mut geometry = Geometry(VertexBuffers::new());
     tessellator
@@ -91,7 +90,7 @@ pub fn fill(
     meshes: &mut ResMut<Assets<Mesh>>,
     translation: Vec3,
     options: &FillOptions,
-) -> SpriteComponents {
+) -> SpriteBundle {
     let mut tessellator = FillTessellator::new();
     let mut geometry = Geometry(VertexBuffers::new());
     tessellator

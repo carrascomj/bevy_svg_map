@@ -44,7 +44,7 @@ fn main() {
           .run();
 }
 
-fn setup(com: Commands, mat: ResMut<Assets<ColorMaterial>>, mesh: ResMut<Assets<Mesh>>) {
+fn setup(com: &mut Commands, mat: ResMut<Assets<ColorMaterial>>, mesh: ResMut<Assets<Mesh>>) {
     load_svg_map(com, mat, mesh, "assets/ex.svg", MyStrategy);
 }
 ```
@@ -110,7 +110,7 @@ Plug and play!
 use bevy_svg_map::load_svg;
 
 fn setup_whole_svg(
-    commands: Commands,
+    commands: &mut Commands,
     materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
