@@ -38,7 +38,6 @@ struct MyStrategy;
 impl StyleStrategy for MyStrategy {}
 
 fn main() {
-    App::build().add_default_plugins().add_startup_system(setup.system()).run();
     App::build()
           .add_default_plugins()
           .add_startup_system(setup.system())
