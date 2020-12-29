@@ -1,8 +1,5 @@
 //! Mainly taken from bevy_input_prototype
-use bevy::{
-    prelude::*,
-    render::mesh::Indices,
-};
+use bevy::{prelude::*, render::mesh::Indices};
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
     StrokeVertex, VertexBuffers,
