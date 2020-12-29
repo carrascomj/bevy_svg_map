@@ -7,7 +7,6 @@ use std::{error::Error, fs};
 use svgtypes::{Length, PathParser};
 
 mod lyon_utils;
-// pub use lyon_utils::{build_path, stroke};
 mod style;
 use style::{StyleSegment, SvgWhole};
 pub use style::{StyleStrategy, SvgStyle};
