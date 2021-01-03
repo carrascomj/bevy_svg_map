@@ -14,7 +14,7 @@ license = "MIT"
 [dependencies]
 svgtypes="0.5.0"
 roxmltree="0.13.0"
-lyon = {git="https://github.com/nical/lyon.git", features=["svg"]}
+lyon = {version="0.17", features=["svg"]}
 # lyon = {version="0.16.2", features=["svg"]}
 euclid = "0.22.1"
 
