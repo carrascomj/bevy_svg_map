@@ -1,7 +1,13 @@
-# Bevy SVG map
+<p align="left">
+<img height=180 src="./assets/bevy_svg_map_logo.svg" alt="Project logo">
+</p>
+
 ![build](https://github.com/carrascomj/bevy_svg_map/workflows/build/badge.svg?branch=master)
 [![Build Status](https://img.shields.io/crates/v/bevy_svg_map.svg)](https://crates.io/crates/bevy_svg_map/)
 [![](https://docs.rs/bevy_svg_map/badge.svg)](https://docs.rs/bevy_svg_map)
+
+# Bevy SVG map
+
 
 Crate for loading SVG files into bevy:
 * Load paths from an SVG directly into [bevy](https://github.com/bevyengine/bevy/).
