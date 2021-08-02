@@ -72,7 +72,7 @@ fn max_coords_doc(svg_map: &str) -> (f64, f64) {
 /// For each of the paths in a SVG file, apply a StyleStrategy to translate them into entities with
 /// functionality added to them, dependent of the SVG properties of the path (stroke, fill...)
 pub fn load_svg_map<T: StyleStrategy>(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     svg_map: &str,
@@ -94,7 +94,7 @@ pub fn load_svg_map<T: StyleStrategy>(
         let path = build_path(builder, traces).unwrap();
         strategy.component_decider(
             &style,
-            commands.spawn(lyon_utils::stroke(
+            commands.spawn().insert(lyon_utils::stroke(
                 path,
                 color_handle,
                 &mut meshes,
@@ -110,14 +110,14 @@ pub fn load_svg_map<T: StyleStrategy>(
 
 /// Load a SVG file as an Entity, return the Commands to allow the user to further modify it
 pub fn load_svg<'cmds>(
-    commands: &'cmds mut Commands,
+    mut commands: Commands<'cmds>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     svg_map: &str,
     width: f32,
     height: f32,
     position: Vec2,
-) -> &'cmds mut Commands {
+) -> Commands<'cmds> {
     let (x_in, y_in) = max_coords_doc(svg_map);
     let (x_max, y_max) = max_coords(svg_map);
     let (x_max, y_max) = (x_max as f32 / 2., y_max as f32 / 2.);
@@ -126,9 +126,8 @@ pub fn load_svg<'cmds>(
     // let mut sprites = Vec::new();
     let tr = Transform::from_translation(position.extend(0f32));
     let globe = GlobalTransform::from_translation(position.extend(0f32));
-    commands.spawn((tr, globe));
-    // TODO: this transformation are a joke...
-    let parent = commands.current_entity().unwrap();
+    let parent = commands.spawn().insert((tr, globe)).id();
+    // TODO: this transformations are a joke...
     for StyleSegment { style, traces } in tokenize_svg(svg_map).unwrap().iter() {
         let builder = lyon::path::Path::builder().with_svg().transformed(
             Transform2D::scale(scale_x, scale_y) // user scale
@@ -148,9 +147,7 @@ pub fn load_svg<'cmds>(
                     .with_line_cap(SvgWhole.linecap_decider(style))
                     .with_line_join(SvgWhole.linejoin_decider(style)),
             );
-            commands.spawn(stroke);
-            let sprite1 = commands.current_entity().unwrap();
-            commands.push_children(parent, &[sprite1]);
+            commands.entity(parent).insert(stroke);
         }
         if matches!(style.fill(), Some(_)) {
             let color_fill_handle = materials.add(SvgWhole.color_fill_decider(style).into());
@@ -161,9 +158,7 @@ pub fn load_svg<'cmds>(
                 Vec3::new(-x_max, -y_max, 0.0),
                 &FillOptions::default(),
             );
-            commands.spawn(fill);
-            let sprite1 = commands.current_entity().unwrap();
-            commands.push_children(parent, &[sprite1]);
+            commands.entity(parent).insert(fill);
         }
     }
     commands

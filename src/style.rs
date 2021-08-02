@@ -107,10 +107,7 @@ impl SvgStyle {
     /// assert_eq!(style.stroke_dasharray().unwrap().iter().sum::<f64>(), 4f64);
     /// ```
     pub fn stroke_dasharray(&self) -> Option<NumberList> {
-        match self.0.get("stroke-dasharray") {
-            Some(c) => Some(c.parse().unwrap()),
-            _ => None,
-        }
+        self.0.get("stroke-dasharray").map(|c| c.parse().unwrap())
     }
     /// In both opacities, please remember that they return a Result (it may change in the future)
     /// ```
@@ -251,7 +248,12 @@ pub trait StyleStrategy {
             _ => LineJoin::Miter,
         }
     }
-    fn component_decider(&self, _style: &SvgStyle, _sprite: &mut bevy::prelude::Commands) {}
+    fn component_decider(
+        &self,
+        _style: &SvgStyle,
+        _sprite: &mut bevy::ecs::system::EntityCommands,
+    ) {
+    }
 }
 
 /// Used when loading whole SVG files as a single entity.

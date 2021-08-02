@@ -21,6 +21,6 @@ euclid = "0.22.1"
 
 [dependencies.bevy]
 # git = "https://github.com/bevyengine/bevy.git"
-version="0.4"
+version="0.5"
 default_features=false
 features = ["render"]
