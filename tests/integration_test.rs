@@ -78,12 +78,12 @@ fn setup_custom(
 }
 
 fn setup_whole_svg(
-    commands: Commands,
+    mut commands: Commands,
     materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
     load_svg(
-        commands,
+        &mut commands,
         materials,
         meshes,
         "assets/ex.svg",
@@ -94,12 +94,12 @@ fn setup_whole_svg(
 }
 
 fn setup_with_shapes(
-    commands: Commands,
+    mut commands: Commands,
     materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
     load_svg(
-        commands,
+        &mut commands,
         materials,
         meshes,
         "assets/with_shapes.svg",
