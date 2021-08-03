@@ -9,12 +9,9 @@
 # Bevy SVG map
 
 
-Crate for loading SVG files into bevy:
-* Load paths from an SVG directly into [bevy](https://github.com/bevyengine/bevy/).
+Crate for loading SVG files directly into [bevy](https://github.com/bevyengine/bevy/).
 The properties of the lines (color, opacity, fill…) can be used to programmatically
 add functionality, setting the foundation for a _very_ weird workflow: Vector Graphics as editor to bevy entities!
-* Load whole SVG files as a single entity (see [this example](#load-a-whole-svg-file-as-an-entity)).
-![alt text](./assets/showcase.png "Two images showing the workflow form Inkscape to a bevy Runtime")
 
 > If you are looking for a plugin that loads SVGs, you may want to take a look at [bevy_svg](https://github.com/Weasy666/bevy_svg).
 
@@ -30,7 +27,7 @@ If you want the bleeding edge (corresponds to [`master`](https://github.com/carr
 [dependencies]
 bevy_svg_map = {git="https://github.com/carrascomj/bevy_svg_map.git"}
 ```
-> :warning: The master branch points to each master branch of **bevy** and [**lyon**](https://github.com/nical/lyon). Use with caution!
+> :warning: The master branch points to each master branch of **bevy**. Use with caution!
 
 The library provides a function to be used inside a bevy's startup_system.
 Here, we are loading the file `ex.svg` under the `assets/` directory.
