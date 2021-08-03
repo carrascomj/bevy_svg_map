@@ -1,4 +1,4 @@
-use bevy_svg_map::{load_svg, load_svg_map, StyleStrategy, SvgStyle};
+use bevy_svg_map::{load_svg_map, StyleStrategy, SvgStyle};
 
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
@@ -77,38 +77,6 @@ fn setup_custom(
     load_svg_map(commands, materials, meshes, "assets/ex.svg", CustomStrategy);
 }
 
-fn setup_whole_svg(
-    mut commands: Commands,
-    materials: ResMut<Assets<ColorMaterial>>,
-    meshes: ResMut<Assets<Mesh>>,
-) {
-    load_svg(
-        &mut commands,
-        materials,
-        meshes,
-        "assets/ex.svg",
-        1.,
-        2.,
-        Vec2::new(0., 0.),
-    );
-}
-
-fn setup_with_shapes(
-    mut commands: Commands,
-    materials: ResMut<Assets<ColorMaterial>>,
-    meshes: ResMut<Assets<Mesh>>,
-) {
-    load_svg(
-        &mut commands,
-        materials,
-        meshes,
-        "assets/with_shapes.svg",
-        64.,
-        64.,
-        Vec2::new(0., 0.),
-    );
-}
-
 #[test]
 fn can_it_be_added() {
     App::build().add_plugin(TestPlugin);
@@ -117,14 +85,4 @@ fn can_it_be_added() {
 #[test]
 fn custom_style_strategy() {
     App::build().add_startup_system(setup_custom.system());
-}
-
-#[test]
-fn whole_svg() {
-    App::build().add_startup_system(setup_whole_svg.system());
-}
-
-#[test]
-fn whole_svg_with_shapes() {
-    App::build().add_startup_system(setup_with_shapes.system());
 }

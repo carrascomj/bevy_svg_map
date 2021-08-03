@@ -256,28 +256,6 @@ pub trait StyleStrategy {
     }
 }
 
-/// Used when loading whole SVG files as a single entity.
-/// Implements StyleStrategy to literal visual properties.
-pub struct SvgWhole;
-
-// TODO implement everything
-impl StyleStrategy for SvgWhole {
-    fn color_decider(&self, style: &SvgStyle) -> Color {
-        match style.stroke() {
-            Some(c) => c,
-            // add red lines if the Color could not be parsed from the SVG
-            _ => Color::RED,
-        }
-    }
-    fn color_fill_decider(&self, style: &SvgStyle) -> Color {
-        match style.fill() {
-            Some(c) => c,
-            // add red lines if the Color could not be parsed from the SVG
-            _ => Color::RED,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

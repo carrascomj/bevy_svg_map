@@ -2,13 +2,12 @@ use bevy::prelude::*;
 use euclid::default::Transform2D;
 use lyon::svg::path_utils::build_path;
 use lyon::tessellation::{FillOptions, StrokeOptions};
-use std::str::FromStr;
 use std::{error::Error, fs};
-use svgtypes::{Length, PathParser};
+use svgtypes::PathParser;
 
 mod lyon_utils;
 mod style;
-use style::{StyleSegment, SvgWhole};
+use style::StyleSegment;
 pub use style::{StyleStrategy, SvgStyle};
 
 /// Return a zero-cost read-only view of the svg XML document as a graph
@@ -45,28 +44,6 @@ fn max_coords(svg_map: &str) -> (f64, f64) {
             };
             (x_f, y_f)
         })
-}
-
-/// Read from <svg width="" and height="">
-fn max_coords_doc(svg_map: &str) -> (f64, f64) {
-    let xmlfile = fs::read_to_string(svg_map).unwrap();
-    let doc = roxmltree::Document::parse(&xmlfile).unwrap();
-    (
-        doc.descendants()
-            .filter(|n| n.tag_name().name() == "svg")
-            .map(|n| Length::from_str(n.attribute("width").unwrap()).unwrap().num)
-            .next()
-            .unwrap(),
-        doc.descendants()
-            .filter(|n| n.tag_name().name() == "svg")
-            .map(|n| {
-                Length::from_str(n.attribute("height").unwrap())
-                    .unwrap()
-                    .num
-            })
-            .next()
-            .unwrap(),
-    )
 }
 
 /// For each of the paths in a SVG file, apply a StyleStrategy to translate them into entities with
@@ -119,64 +96,6 @@ pub fn load_svg_map<T: StyleStrategy>(
             )
         }
     }
-}
-
-/// Load a SVG file as an Entity, return the Entity to allow the user to further modify it
-pub fn load_svg(
-    commands: &mut Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    svg_map: &str,
-    width: f32,
-    height: f32,
-    position: Vec2,
-) -> Entity {
-    let (x_in, y_in) = max_coords_doc(svg_map);
-    let (x_max, y_max) = max_coords(svg_map);
-    let (x_max, y_max) = (x_max as f32 / 2., y_max as f32 / 2.);
-    let (scale_x, scale_y) = ((width / x_in as f32), (height / y_in as f32));
-
-    // let mut sprites = Vec::new();
-    let tr = Transform::from_translation(position.extend(0f32));
-    let globe = GlobalTransform::from_translation(position.extend(0f32));
-    let parent = commands.spawn().insert((tr, globe)).id();
-    // TODO: this transformations are a joke...
-    for StyleSegment { style, traces } in tokenize_svg(svg_map).unwrap().iter() {
-        let builder = lyon::path::Path::builder().with_svg().transformed(
-            Transform2D::scale(scale_x, scale_y) // user scale
-                .pre_rotate(euclid::Angle::radians(std::f32::consts::PI / 2.)) // rotate 180º for some reason
-                .then(&Transform2D::new(0f32, 1f32, 1f32, 0f32, 0f32, 0f32)), // mirror for some reason
-        );
-        let path = build_path(builder, traces).unwrap();
-        if matches!(style.stroke(), Some(_)) {
-            let color_handle = materials.add(SvgWhole.color_decider(style).into());
-            let stroke = lyon_utils::stroke(
-                path.clone(),
-                color_handle,
-                &mut meshes,
-                Vec3::new(-x_max, -y_max, 0.0),
-                &StrokeOptions::default()
-                    .with_line_width(SvgWhole.width_decider(style))
-                    .with_line_cap(SvgWhole.linecap_decider(style))
-                    .with_line_join(SvgWhole.linejoin_decider(style)),
-            );
-            let child = commands.spawn().insert_bundle(stroke).id();
-            commands.entity(parent).insert_children(0, &[child]);
-        }
-        if matches!(style.fill(), Some(_)) {
-            let color_fill_handle = materials.add(SvgWhole.color_fill_decider(style).into());
-            let fill = lyon_utils::fill(
-                path,
-                color_fill_handle,
-                &mut meshes,
-                Vec3::new(-x_max, -y_max, 0.0),
-                &FillOptions::default(),
-            );
-            let child = commands.spawn().insert_bundle(fill).id();
-            commands.entity(parent).insert_children(0, &[child]);
-        }
-    }
-    parent
 }
 
 #[cfg(test)]
