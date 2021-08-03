@@ -78,7 +78,6 @@ pub fn load_svg_map<T: StyleStrategy>(
     svg_map: &str,
     strategy: T,
 ) {
-    // let wall_thickness = 10.0;
     let (x_max, y_max) = max_coords(svg_map);
     let (x_max, y_max) = (x_max as f32, y_max as f32);
 
@@ -94,7 +93,7 @@ pub fn load_svg_map<T: StyleStrategy>(
         let path = build_path(builder, traces).unwrap();
         strategy.component_decider(
             &style,
-            commands.spawn().insert(lyon_utils::stroke(
+            commands.spawn().insert_bundle(lyon_utils::stroke(
                 path,
                 color_handle,
                 &mut meshes,
@@ -108,16 +107,16 @@ pub fn load_svg_map<T: StyleStrategy>(
     }
 }
 
-/// Load a SVG file as an Entity, return the Commands to allow the user to further modify it
-pub fn load_svg<'cmds>(
-    mut commands: Commands<'cmds>,
+/// Load a SVG file as an Entity, return the Entity to allow the user to further modify it
+pub fn load_svg(
+    commands: &mut Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     svg_map: &str,
     width: f32,
     height: f32,
     position: Vec2,
-) -> Commands<'cmds> {
+) -> Entity {
     let (x_in, y_in) = max_coords_doc(svg_map);
     let (x_max, y_max) = max_coords(svg_map);
     let (x_max, y_max) = (x_max as f32 / 2., y_max as f32 / 2.);
@@ -147,7 +146,8 @@ pub fn load_svg<'cmds>(
                     .with_line_cap(SvgWhole.linecap_decider(style))
                     .with_line_join(SvgWhole.linejoin_decider(style)),
             );
-            commands.entity(parent).insert(stroke);
+            let child = commands.spawn().insert_bundle(stroke).id();
+            commands.entity(parent).insert_children(0, &[child]);
         }
         if matches!(style.fill(), Some(_)) {
             let color_fill_handle = materials.add(SvgWhole.color_fill_decider(style).into());
@@ -158,10 +158,11 @@ pub fn load_svg<'cmds>(
                 Vec3::new(-x_max, -y_max, 0.0),
                 &FillOptions::default(),
             );
-            commands.entity(parent).insert(fill);
+            let child = commands.spawn().insert_bundle(fill).id();
+            commands.entity(parent).insert_children(0, &[child]);
         }
     }
-    commands
+    parent
 }
 
 #[cfg(test)]
