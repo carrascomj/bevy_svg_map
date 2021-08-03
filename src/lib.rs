@@ -11,10 +11,19 @@ use style::StyleSegment;
 pub use style::{StyleStrategy, SvgStyle};
 
 /// Return a zero-cost read-only view of the svg XML document as a graph
-fn take_lines_with_style<'a>(doc: &'a roxmltree::Document) -> Vec<(&'a str, &'a str)> {
+fn take_lines_with_style<'a>(
+    doc: &'a roxmltree::Document,
+) -> Vec<(&'a str, &'a str, Option<&'a str>, Option<&'a str>)> {
     doc.descendants()
         .filter(|n| matches!(n.attribute("d"), Some(_)))
-        .map(|n| (n.attribute("style").unwrap(), n.attribute("d").unwrap()))
+        .map(|n| {
+            (
+                n.attribute("style").unwrap(),
+                n.attribute("d").unwrap(),
+                n.attribute("id"),
+                n.attribute("class"),
+            )
+        })
         .collect()
 }
 
@@ -117,5 +126,12 @@ mod tests {
                     acc
                 }
             });
+    }
+    #[test]
+    fn tokenize_id_attribute() {
+        assert!(tokenize_svg("assets/ex.svg")
+            .unwrap()
+            .iter()
+            .any(|st| st.style.id().is_some()));
     }
 }

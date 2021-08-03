@@ -33,9 +33,11 @@ pub struct StyleSegment {
     pub traces: String,
 }
 
-impl From<(&str, &str)> for StyleSegment {
-    fn from(tup: (&str, &str)) -> Self {
-        let style: SvgStyle = SvgStyle::from(tup.0);
+impl From<(&str, &str, Option<&str>, Option<&str>)> for StyleSegment {
+    fn from(tup: (&str, &str, Option<&str>, Option<&str>)) -> Self {
+        let mut style: SvgStyle = SvgStyle::from(tup.0);
+        style.id = tup.2.map(|s| s.to_owned());
+        style.class = tup.3.map(|s| s.to_owned());
         let traces = tup.1.to_string();
         StyleSegment { style, traces }
     }
@@ -62,7 +64,11 @@ impl From<(&str, &str)> for StyleSegment {
 /// );
 /// ```
 #[derive(Debug)]
-pub struct SvgStyle(HashMap<String, String>);
+pub struct SvgStyle {
+    id: Option<String>,
+    class: Option<String>,
+    hash_style: HashMap<String, String>,
+}
 
 impl SvgStyle {
     pub fn stroke(&self) -> Option<Color> {
@@ -107,7 +113,9 @@ impl SvgStyle {
     /// assert_eq!(style.stroke_dasharray().unwrap().iter().sum::<f64>(), 4f64);
     /// ```
     pub fn stroke_dasharray(&self) -> Option<NumberList> {
-        self.0.get("stroke-dasharray").map(|c| c.parse().unwrap())
+        self.hash_style
+            .get("stroke-dasharray")
+            .map(|c| c.parse().unwrap())
     }
     /// In both opacities, please remember that they return a Result (it may change in the future)
     /// ```
@@ -121,13 +129,13 @@ impl SvgStyle {
     /// );
     /// ```
     pub fn stroke_opacity(&self) -> Result<f32, std::num::ParseFloatError> {
-        match self.0.get("stroke-opacity") {
+        match self.hash_style.get("stroke-opacity") {
             Some(c) => c.parse(),
             _ => Ok(1f32),
         }
     }
     pub fn fill_opacity(&self) -> Result<f32, std::num::ParseFloatError> {
-        match self.0.get("fill-opacity") {
+        match self.hash_style.get("fill-opacity") {
             Some(c) => c.parse(),
             _ => Ok(1f32),
         }
@@ -154,7 +162,7 @@ impl SvgStyle {
     /// );
     /// ```
     pub fn stroke_linecap(&self) -> Option<LineCap> {
-        match self.0.get("stroke-linecap") {
+        match self.hash_style.get("stroke-linecap") {
             Some(c) => match c.as_ref() {
                 "butt" => Some(LineCap::Butt),
                 "round" => Some(LineCap::Round),
@@ -179,7 +187,7 @@ impl SvgStyle {
     /// );
     /// ```
     pub fn stroke_linejoin(&self) -> Option<LineJoin> {
-        match self.0.get("stroke-linejoin") {
+        match self.hash_style.get("stroke-linejoin") {
             Some(c) => match c.as_ref() {
                 "butt" => Some(LineJoin::Bevel),
                 "miter" => Some(LineJoin::Miter),
@@ -190,8 +198,16 @@ impl SvgStyle {
             _ => None,
         }
     }
+    /// Id of the path, if any
+    pub fn id(&self) -> &Option<String> {
+        &self.id
+    }
+    /// Id of the path, if any
+    pub fn class(&self) -> &Option<String> {
+        &self.class
+    }
     fn panic_access(&self, key: &str) -> &str {
-        match self.0.get(key) {
+        match self.hash_style.get(key) {
             Some(value) => value,
             _ => panic!(
                 "Field {} (used to build svg-based components) is missing! Check your SVG file",
@@ -203,15 +219,17 @@ impl SvgStyle {
 
 impl From<&str> for SvgStyle {
     fn from(style: &str) -> Self {
-        SvgStyle(
-            style
+        SvgStyle {
+            hash_style: style
                 .split(';')
                 .map(|n| {
                     let a: Vec<&str> = n.split(':').take(2).collect();
                     (a[0].to_string(), a[1].to_string())
                 })
                 .collect::<HashMap<String, String>>(),
-        )
+            id: None,
+            class: None,
+        }
     }
 }
 
