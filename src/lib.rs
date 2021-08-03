@@ -91,19 +91,33 @@ pub fn load_svg_map<T: StyleStrategy>(
                 .then_translate(euclid::Vector2D::new(0., -y_max)), // translate again to bevy coordinates
         );
         let path = build_path(builder, traces).unwrap();
-        strategy.component_decider(
-            &style,
-            commands.spawn().insert_bundle(lyon_utils::stroke(
-                path,
-                color_handle,
-                &mut meshes,
-                Vec3::new(-x_max, -y_max, 0.0),
-                &StrokeOptions::default()
-                    .with_line_width(strategy.width_decider(style))
-                    .with_line_cap(strategy.linecap_decider(style))
-                    .with_line_join(strategy.linejoin_decider(style)),
-            )),
-        )
+        if matches!(style.stroke(), Some(_)) {
+            strategy.component_decider(
+                &style,
+                commands.spawn().insert_bundle(lyon_utils::stroke(
+                    path.clone(),
+                    color_handle.clone(),
+                    &mut meshes,
+                    Vec3::new(-x_max, -y_max, 0.0),
+                    &StrokeOptions::default()
+                        .with_line_width(strategy.width_decider(style))
+                        .with_line_cap(strategy.linecap_decider(style))
+                        .with_line_join(strategy.linejoin_decider(style)),
+                )),
+            )
+        }
+        if matches!(style.fill(), Some(_)) {
+            strategy.component_decider(
+                &style,
+                commands.spawn().insert_bundle(lyon_utils::fill(
+                    path,
+                    color_handle,
+                    &mut meshes,
+                    Vec3::new(-x_max, -y_max, 0.0),
+                    &FillOptions::default(),
+                )),
+            )
+        }
     }
 }
 
