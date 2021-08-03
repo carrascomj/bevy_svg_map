@@ -24,3 +24,6 @@ euclid = "0.22.1"
 version="0.5"
 default_features=false
 features = ["render"]
+
+[dev-dependencies]
+bevy = "0.5"
