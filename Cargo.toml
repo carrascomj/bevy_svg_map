@@ -1,6 +1,6 @@
 [package]
 name = "bevy_svg_map"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["carrascomj <carrascomurielj@gmail.com>"]
 edition = "2018"
 repository = "https://github.com/carrascomj/bevy_svg_map"
